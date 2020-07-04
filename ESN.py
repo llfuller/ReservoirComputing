@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 import scipy.sparse
 
 """Build an Echo State Network"""
@@ -47,6 +48,7 @@ class ESN:
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
         W_in = scaling_W_in*np.ones((N_x, N_u+1))
+
         return W_in
 
     def update_reservoir(self, u):
@@ -55,21 +57,24 @@ class ESN:
         x_nm1 = self.x
         x_n_tilde = np.tanh(np.matmul(self.W,x_nm1)
                             + np.matmul(self.W_in, np.hstack((u,np.array([1])))))
-        x_n = np.mutiply((1-self.alpha_matrix), x_nm1) + \
-              np.mutiply(self.alpha_matrix, x_n_tilde)
+        x_n = np.multiply((1-self.alpha_matrix), x_nm1) \
+              + np.multiply(self.alpha_matrix, x_n_tilde)
         self.x = x_n
 
     def output_Y(self, u):
         one_by_one = np.array([1])
-        concatinated_matrix = np.hstack(one_by_one,
-                                        u,
-                                        self.x)
+        concatinated_matrix = np.hstack((np.hstack((one_by_one, u)),
+                                        self.x))
+        print(np.shape(self.W_out))
+        print(np.shape(concatinated_matrix))
         return np.matmul(self.W_out, concatinated_matrix)
 
     def calculate_W_out(self, Y_target, X):
         # see Lukosevicius Practical ESN eqtn 11
         # Using the usual linear regression
-        W_out = np.multi_dot(Y_target,
-                             np.transpose(X),
-                             np.linalg.inv(np.matmul(X,np.transpose(X))))
+        # print(np.shape(np.array([np.real(np.matmul(X.transpose(),
+        #                                np.linalg.inv(np.outer(X,X))))])))
+        W_out = np.matmul(np.array([Y_target]).transpose(),
+                             np.array([np.real(np.matmul(X.transpose(),
+                                       np.linalg.inv(np.outer(X,X))))]))
         self.W_out = W_out

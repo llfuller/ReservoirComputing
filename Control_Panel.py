@@ -1,9 +1,10 @@
-import ESN
 import Lorenz63
+import ESN
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 import scipy.sparse
+
 
 np.random.seed(2020)
 testSystem = "L63"
@@ -36,8 +37,6 @@ ESN_1.build_W(N_x, sparsity, scaling_W)
 ESN_1.build_W_in(N_x, N_u, scaling_W_in)
 
 # Run ESN for however many timesteps necessary to get enough elements in Y
-print(np.shape(x_initial))
-print(np.shape(x))
 x[0] = x_initial
 for n in range(1,num_timesteps):
     ESN_1.update_reservoir(Y_target[n-1])
@@ -49,7 +48,9 @@ ESN_1.calculate_W_out(Y_target[n - 1], ESN_1.x)
 Y = np.empty_like(Y_target)
 
 # Predict next few timesteps:
+ESN_1.x = x[num_timesteps-1]
 for n in range(num_timesteps, num_timesteps_data):
+    ESN_1.update_reservoir(Y_target[n-1])
     Y[n] = ESN_1.output_Y(Y_target[n-1])
 
 # Plot Y and Y_target for comparison:
