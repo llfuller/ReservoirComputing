@@ -4,6 +4,7 @@ from scipy.integrate import odeint
 from mpl_toolkits.mplot3d import Axes3D
 
 # Code from Wikipedia page on the "Lorenz System" with minor modifications
+np.random.seed(2020)
 
 rho = 28.0
 sigma = 10.0
@@ -14,7 +15,7 @@ def f(state, t):
     return sigma * (y - x), x * (rho - z) - y, x * y - beta * z  # Derivatives
 
 state0 = [1.0, 1.0, 1.0]
-t = np.arange(0.0, 4000.0, 0.01)
+t = np.arange(0.0, 400.0, 0.001)
 
 states = odeint(f, state0, t) #shape is (time points=4000, spatial dims = 3)
 
