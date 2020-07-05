@@ -13,12 +13,16 @@ train_start_timestep = 3000
 num_timesteps_train = 100000 # arbitrarily chosen number
 # For parameter search by grid search:
 
-extra_W_in_scale_factor_grid = np.float32(range(1,1000))/5.0 # input scalings grid
+extra_W_in_scale_factor_grid = np.float32(range(1,11))/5.0 # input scalings grid
 scaling_W_grid = np.float32(range(1,6))/5.0 # multiplier for spectral radius grid
 alpha_grid = np.float32(range(11))/10.0 # uniform leaking rate grid
 
 # Secondary parameters to optimize
-beta_grid = np.logspace(-4, 6, 10)
+beta_grid = np.logspace(-4, 16, 20)
+
+# Not yet included in grid search or anything like that
+extra_W_fb_scale_factor_grid = np.float32(range(1,1000))/5.0 # input scalings grid
+
 
 # Keeping track of mse:
 mse_array = 100000000*np.ones((np.shape(extra_W_in_scale_factor_grid)[0],
@@ -76,7 +80,7 @@ def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,be
     # Construct ESN architecture
     ESN_1 = ESN.ESN(N_x, N_u, N_y, sparsity,
                     x_initial, alpha_input, scaling_W,
-                    scaling_W_in)
+                    scaling_W_in, scaling_W_fb)
     print("W_in: " + str(ESN_1.W_in))
 
     after_ESN_construction_time = time.time() - start_time
@@ -87,7 +91,8 @@ def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,be
     # Run ESN for however many timesteps necessary to get enough activation elements x of reservoir
     ESN_1.x = x[0]
     for n in range(1, num_timesteps_train):
-        ESN_1.update_reservoir(Y_target[:, n], x[n - 1])
+        # Using Teacher Forcing method:
+        ESN_1.update_reservoir(Y_target[:, n], x[n - 1], Y_target[:,n-1])
         # print(ESN_1.x)
         x[n] = ESN_1.x
 
@@ -104,14 +109,14 @@ def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,be
     print(after_W_out_train_time)
     print("after_W_out_train_time")
 
-    # Predict Y at each training timestep:
+    # Predict Y at each training timestep (this isn't training. this is prediction):
     Y[:, 0] = Y_target[:, 0]
     ESN_1.x = x[0]
     x_predict = np.empty(np.shape(x))
     x_predict[0] = x[0]
     for n in range(1, num_timesteps_train):
         Y[:, n] = ESN_1.output_Y(Y[:, n - 1], x_predict[n - 1])
-        ESN_1.update_reservoir(Y[:, n], x_predict[n - 1])
+        ESN_1.update_reservoir(Y[:, n], x_predict[n - 1],Y[:,n-1])
         x_predict[n] = ESN_1.x
 
     after_Y_predict_train_time = time.time() - start_time
@@ -130,12 +135,13 @@ def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,be
     print("Max of W_out is "+str(np.max(ESN_1.W_out)))
     plt.figure()
     plt.plot(ESN_1.W_out)
-i,j,k, l = 9,4,9,6
+i,j,k,l,m = 9,4,9,7,11
 
 extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i]
 scaling_W = scaling_W_grid[j]
 scaling_alpha = alpha_grid[k]
 beta = beta_grid[l]
+scaling_W_fb = extra_W_fb_scale_factor_grid[m]
 main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,beta,
                 N_u,N_y,N_x,x_initial,Y_target,num_timesteps_data)
 plot_3D_orbits(num_timesteps_train, Y, Y_target)

@@ -14,18 +14,21 @@ class ESN:
     alpha_matrix = np.zeros((1,1))
     # W_in has shape (N_x, N_u + 1)
     W_in = np.zeros((1,1))
+    # W_fb has shape (N_x, N_u)
+    W_fb = np.zeros((1,1))
     # W_out has shape (N_y, 1 + N_x + N_u)
     W_out = np.zeros((1,1))
 
     def __init__(self, N_x, N_u, N_y, sparsity,
                  x_initial, alpha_input, scaling_W,
-                 scaling_W_in):
+                 scaling_W_in, scaling_W_fb):
         # num_rows and num_cols are scalars
         # input_W_in has shape (N_x, N_u + 1)
         # x_initial has shape (N_x, N_x)
         # alpha_input has shape (N_x, N_x)
         self.W = self.build_W(N_x, sparsity, scaling_W)#input_W
         self.W_in = self.build_W_in(N_x, N_u, scaling_W_in)#input_W_in
+        self.W_fb = self.build_W_in(N_x, N_u, scaling_W_fb)#input_W_fb
         self.x = x_initial
         self.alpha_matrix = alpha_input
 
@@ -51,7 +54,11 @@ class ESN:
         W_in = (1.0/scaling_W_in)*np.random.random((N_x, N_u+1))
         return W_in
 
-    def update_reservoir(self, u, x_nm1):
+    def build_W_fb(self, N_x, N_u, scaling_W_fb):
+        W_fb = (1.0/scaling_W_fb)*np.random.random((N_x, N_u))
+        return W_fb
+
+    def update_reservoir(self, u, x_nm1, y_nm1):
         # u is input at specific time
         #   u has shape (N_u + 1)
         # print("Shape 1: " +str(np.shape(np.matmul(self.W,x_nm1)))) #(30, 400000)
@@ -59,8 +66,11 @@ class ESN:
         # print("Shape 3: " +str(np.shape( np.hstack((u,np.array([1]))))))
         # print(np.matmul(self.W,x_nm1)
         #                     + np.matmul(self.W_in, np.hstack((u,np.array([1])))))
+        # See page 16 of Lukosevicius PracticalESN for feedback info.
+
         x_n_tilde = np.tanh(np.matmul(self.W,x_nm1)
-                            + np.matmul(self.W_in, np.hstack((u,np.array([1])))))
+                            + np.matmul(self.W_in, np.hstack((u,np.array([1]))))
+                            + np.matmul(self.W_fb, np.hstack((y_nm1,np.array([1])))))
         x_n = np.multiply((1-self.alpha_matrix), x_nm1) \
               + np.multiply(self.alpha_matrix, x_n_tilde)
         self.x = x_n
