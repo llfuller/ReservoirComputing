@@ -1,6 +1,8 @@
 import numpy as np
+import cupy as cp
 import scipy as sp
 import scipy.sparse
+import os.path
 
 """Build an Echo State Network"""
 class ESN:
@@ -31,20 +33,18 @@ class ESN:
         # N_x integer
         # sparsity between 0 and 1 inclusive
         # scaling_W >= 1
-        full_random = 2 * (np.random.rand(N_x, N_x) - 0.5)
-        # Build sparse adjacency matrix W:
-        input_W_sparsity = -1234 * np.ones((N_x, N_x))
-        for i, row in enumerate(input_W_sparsity):
-            for j, one_element in enumerate(row):
-                randNum = np.random.rand()
-                input_W_sparsity[i, j] = randNum < sparsity
-        # Calculate unnormalized W
-        W_unnormalized = np.multiply(input_W_sparsity, full_random)
-        # Normalize by largest eigenvalue and additional scaling factor
-        # to control decrease of spectral radius.
-        largest_eigenvalue = np.sort(np.linalg.eigvals(W_unnormalized))[-1]
-        print("LARGEST EIGENVALUE IS "+str(largest_eigenvalue))
-        W = np.multiply( scaling_W, np.divide(W_unnormalized,abs(largest_eigenvalue)) )
+        if os.path.isfile('./W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt'):
+            W = np.loadtxt('W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt')
+        else:
+            # Build sparse adjacency matrix W:
+            W_unnormalized = sp.multiply(sp.random.choice((-1,1), size=(N_x,N_x)),
+                                         sp.sparse.random(N_x,N_x, density = sparsity).todense())
+            # Normalize by largest eigenvalue and additional scaling factor
+            # to control decrease of spectral radius.
+            largest_eigenvalue = np.sort(np.linalg.eigvals(W_unnormalized))[-1]
+            print("LARGEST EIGENVALUE IS "+str(largest_eigenvalue))
+            W = np.float32(np.multiply( scaling_W, np.divide(W_unnormalized,abs(largest_eigenvalue)) ))
+            np.savetxt('W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt',W, fmt = '%.8f')
         return W
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
@@ -77,14 +77,14 @@ class ESN:
         # print(np.shape(np.matmul(self.W_out, concatinated_matrix)))
         return np.matmul(self.W_out, concatinated_matrix)
 
-    def calculate_W_out(self, Y_target, x, N_x, beta, num_timesteps):
+    def calculate_W_out(self, Y_target, x, N_x, beta, train_start_timestep, num_timesteps):
         # see Lukosevicius Practical ESN eqtn 11
         # Using the usual linear regression
         # print(np.shape(np.array([np.real(np.matmul(X.transpose(),
         #                                np.linalg.inv(np.outer(X,X))))])))
         N_u = np.shape(Y_target)[0]
         # print(str(np.shape(np.ones((1, num_timesteps)))) + "," + str(np.shape(Y_target)) + "," + str(np.shape(x.transpose())))
-        X = np.vstack((np.ones((1,num_timesteps)), Y_target, x.transpose()))
+        X = np.vstack((np.ones((1,num_timesteps-train_start_timestep)), Y_target, x.transpose()))
         # print("Shape of X is:"+str(np.shape(X)))
         # print("Shape of x is:"+str(np.shape(x)))
         # print("Shape of Y_target_windowed is:"+str(np.shape(Y_target)))
