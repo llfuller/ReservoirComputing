@@ -3,8 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="ed8f0f10-7d84-43d3-ba01-25369da3fe9f" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Control_Panel.py" beforeDir="false" afterPath="$PROJECT_DIR$/Control_Panel.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ESN.py" beforeDir="false" afterPath="$PROJECT_DIR$/ESN.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/L63_States.txt" beforeDir="false" afterPath="$PROJECT_DIR$/L63_States.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Lorenz63.py" beforeDir="false" afterPath="$PROJECT_DIR$/Lorenz63.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,7 +43,7 @@
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\ProgramData\Anaconda3\python.exe" />
+      <option name="SDK_HOME" value="C:\Users\Lawson\.conda\envs\tf-gpu\python.exe" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -62,7 +64,7 @@
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="C:\ProgramData\Anaconda3\python.exe" />
+      <option name="SDK_HOME" value="C:\Users\Lawson\.conda\envs\tf-gpu\python.exe" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -107,46 +109,46 @@
     <servers />
   </component>
   <component name="WindowStateProjectService">
-    <state x="0" y="616" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1593850315940">
+    <state x="0" y="616" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1593913013807">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state x="0" y="616" key="#com.intellij.execution.impl.EditConfigurationsDialog/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593850315940" />
+    <state x="0" y="616" key="#com.intellij.execution.impl.EditConfigurationsDialog/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593913013807" />
     <state x="320" y="716" key="FileChooserDialogImpl" timestamp="1593850314401">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
     <state x="320" y="716" key="FileChooserDialogImpl/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593850314401" />
-    <state width="1059" height="304" key="GridCell.Tab.0.bottom" timestamp="1593853000033">
+    <state width="1059" height="408" key="GridCell.Tab.0.bottom" timestamp="1593924593533">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="304" key="GridCell.Tab.0.bottom/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593853000033" />
-    <state width="1059" height="304" key="GridCell.Tab.0.center" timestamp="1593853000033">
+    <state width="1059" height="408" key="GridCell.Tab.0.bottom/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593924593533" />
+    <state width="1059" height="408" key="GridCell.Tab.0.center" timestamp="1593924593533">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="304" key="GridCell.Tab.0.center/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593853000033" />
-    <state width="1059" height="304" key="GridCell.Tab.0.left" timestamp="1593853000033">
+    <state width="1059" height="408" key="GridCell.Tab.0.center/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593924593533" />
+    <state width="1059" height="408" key="GridCell.Tab.0.left" timestamp="1593924593533">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="304" key="GridCell.Tab.0.left/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593853000033" />
-    <state width="1059" height="304" key="GridCell.Tab.0.right" timestamp="1593853000033">
+    <state width="1059" height="408" key="GridCell.Tab.0.left/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593924593533" />
+    <state width="1059" height="408" key="GridCell.Tab.0.right" timestamp="1593924593533">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="304" key="GridCell.Tab.0.right/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593853000033" />
-    <state width="1059" height="699" key="GridCell.Tab.1.bottom" timestamp="1593849004955">
+    <state width="1059" height="408" key="GridCell.Tab.0.right/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593924593533" />
+    <state width="1059" height="699" key="GridCell.Tab.1.bottom" timestamp="1593903782835">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="699" key="GridCell.Tab.1.bottom/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593849004955" />
-    <state width="1059" height="699" key="GridCell.Tab.1.center" timestamp="1593849004955">
+    <state width="1059" height="699" key="GridCell.Tab.1.bottom/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593903782835" />
+    <state width="1059" height="699" key="GridCell.Tab.1.center" timestamp="1593903782835">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="699" key="GridCell.Tab.1.center/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593849004955" />
-    <state width="1059" height="699" key="GridCell.Tab.1.left" timestamp="1593849004955">
+    <state width="1059" height="699" key="GridCell.Tab.1.center/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593903782835" />
+    <state width="1059" height="699" key="GridCell.Tab.1.left" timestamp="1593903782835">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="699" key="GridCell.Tab.1.left/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593849004955" />
-    <state width="1059" height="699" key="GridCell.Tab.1.right" timestamp="1593849004955">
+    <state width="1059" height="699" key="GridCell.Tab.1.left/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593903782835" />
+    <state width="1059" height="699" key="GridCell.Tab.1.right" timestamp="1593903782835">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>
-    <state width="1059" height="699" key="GridCell.Tab.1.right/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593849004955" />
+    <state width="1059" height="699" key="GridCell.Tab.1.right/-1920.836.1920.1080/0.0.1080.1920@0.0.1080.1920" timestamp="1593903782835" />
     <state width="548" height="968" key="XDebugger.FullValuePopup" timestamp="1593828153751">
       <screen x="0" y="0" width="1080" height="1920" />
     </state>

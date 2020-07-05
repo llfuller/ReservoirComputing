@@ -2,60 +2,100 @@ import Lorenz63
 import ESN
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 import scipy as sp
-import scipy.sparse
 
-
+start_time = time.time()
 np.random.seed(2020)
 testSystem = "L63"
-num_timesteps = 200 # arbitrarily chosen number
+num_timesteps_train = 10000 # arbitrarily chosen number
 # scaling_W is for tuning procedure after normalization of W
 scaling_W = 1 #TBD in tuning
-sparsity = 0.1
+sparsity = 0.15
+beta = 10 # regularization coefficient (Lukosevicius PracticalESN Eqtn 9)
 
 # N_x "should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
 if testSystem is "L63":
-    N_x = 3 * 10
+    t_final = 100.0
+    dt = 0.001
+    # Lorenz63.run_L63(t_final, dt)
+    N_x = 3 * 2000
     N_u = Lorenz63.setup_ESN_params_L63()[0]
     N_y = Lorenz63.setup_ESN_params_L63()[1]
-    Y_target = np.loadtxt('L63_States.txt')
+    Y_target = (np.loadtxt('L63_States.txt')).transpose()
     scaling_W_in = np.max(Y_target) # normalization factor for inputs
-    alpha_input = 0.001 * np.ones(N_x)
-    num_timesteps_data = np.shape(Y_target)[0]
+    alpha_input = 1 * np.ones(N_x)
+    # print("Shape of np.shape(Y_target)")
+    # print(np.shape(Y_target))
+    num_timesteps_data = np.shape(Y_target)[1]
 
+after_system_sim_time = time.time()-start_time
+print(after_system_sim_time)
+print("after_system_sim_time")
 # x_initial is random since I don't know any better
 x_initial = np.random.rand(N_x)
-x = -1234*np.ones((num_timesteps, N_x))
+x = -1234*np.ones((num_timesteps_train, N_x))
+x[0] = x_initial
 
 # Construct ESN architecture
 ESN_1 = ESN.ESN(N_x, N_u, N_y, sparsity,
                 x_initial, alpha_input, scaling_W,
                 scaling_W_in)
-ESN_1.build_W(N_x, sparsity, scaling_W)
-ESN_1.build_W_in(N_x, N_u, scaling_W_in)
+print("W_in: " +str(ESN_1.W_in))
 
-# Run ESN for however many timesteps necessary to get enough elements in Y
-x[0] = x_initial
-for n in range(1,num_timesteps):
-    ESN_1.update_reservoir(Y_target[n-1])
+
+after_ESN_construction_time = time.time()-start_time
+print(after_ESN_construction_time)
+print("after_ESN_construction_time")
+print("W: "+str(ESN_1.W))
+
+# Run ESN for however many timesteps necessary to get enough activation elements x of reservoir
+ESN_1.x = x[0]
+for n in range(1,num_timesteps_train):
+    ESN_1.update_reservoir(Y_target[:,n], x[n-1])
+    # print(ESN_1.x)
     x[n] = ESN_1.x
 
-ESN_1.calculate_W_out(Y_target[n - 1], ESN_1.x)
+after_ESN_feed_time = time.time()-start_time
+print(after_ESN_feed_time)
+print("after_ESN_feed_time")
 
-# Create empty ESN output matrix Y with dim(Y)=dim(Y_target)
-Y = np.empty_like(Y_target)
+# Compute W_out (readout coefficients)
+ESN_1.calculate_W_out(Y_target[:,:num_timesteps_train], x, N_x, beta, num_timesteps_train)
 
-# Predict next few timesteps:
-ESN_1.x = x[num_timesteps-1]
-for n in range(num_timesteps, num_timesteps_data):
-    ESN_1.update_reservoir(Y_target[n-1])
-    Y[n] = ESN_1.output_Y(Y_target[n-1])
+after_W_out_train_time = time.time()-start_time
+print(after_W_out_train_time)
+print("after_W_out_train_time")
+
+
+
+# Predict Y at each training timestep:
+Y = np.empty((N_y, num_timesteps_train))
+Y[:,0] = Y_target[:,0]
+ESN_1.x = x[0]
+x_predict = np.empty(np.shape(x))
+x_predict[0] = x[0]
+for n in range(1,num_timesteps_train):
+    Y[:,n] = ESN_1.output_Y(Y[:,n-1], x_predict[n-1])
+    ESN_1.update_reservoir(Y[:, n], x_predict[n - 1])
+    x_predict[n] = ESN_1.x
+
+after_Y_predict_train_time = time.time()-start_time
+print(after_Y_predict_train_time)
+
+
+print(np.shape(x))
+
 
 # Plot Y and Y_target for comparison:
 fig = plt.figure()
 ax = fig.gca()
-ax.plot(Y_target)
-plt.plot()
+# ax = fig.gca(projection='3d')
+ax.plot(Y_target[1,:num_timesteps_train])
+# ax.plot(Y[0, :].transpose(), Y[1, :].transpose(), Y[2, :].transpose())
+ax.plot(Y[2, :num_timesteps_train])
+# ax.plot(x)
+# plt.plot
 plt.show()

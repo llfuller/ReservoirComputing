@@ -9,8 +9,6 @@ def run_L63(t_final, dt):
     rho = 28.0
     sigma = 10.0
     beta = 8.0 / 3.0
-    t_final = 400.0
-    dt = 0.001
 
     def f(state, t):
         x, y, z = state  # Unpack the state vector
