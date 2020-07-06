@@ -44,9 +44,9 @@ class ESN:
                                          sp.sparse.random(N_x,N_x, density = sparsity).todense())
             # Normalize by largest eigenvalue and additional scaling factor
             # to control decrease of spectral radius.
-            largest_eigenvalue = np.sort(np.linalg.eigvals(W_unnormalized))[-1]
-            print("SPECTRAL RADIUS IS IS "+str(abs(largest_eigenvalue)))
-            W = np.float32(np.multiply( scaling_W, np.divide(W_unnormalized,abs(largest_eigenvalue)) ))
+            spectral_radius = np.max(abs(np.linalg.eigvals(W_unnormalized)))
+            print("SPECTRAL RADIUS IS IS "+str(spectral_radius))
+            W = np.float32(np.multiply( scaling_W, np.divide(W_unnormalized,spectral_radius) ))
             np.savetxt('W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt',W, fmt = '%.8f')
         return W
 
