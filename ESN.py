@@ -70,7 +70,7 @@ class ESN:
 
         x_n_tilde = np.tanh(np.matmul(self.W,x_nm1)
                             + np.matmul(self.W_in, np.hstack((u,np.array([1]))))
-                            + np.matmul(self.W_fb, np.hstack((y_nm1,np.array([1])))))
+                            + 0*np.matmul(self.W_fb, np.hstack((y_nm1,np.array([1])))))
         x_n = np.multiply((1-self.alpha_matrix), x_nm1) \
               + np.multiply(self.alpha_matrix, x_n_tilde)
         self.x = x_n
@@ -100,8 +100,9 @@ class ESN:
         # print("Shape of Y_target_windowed is:"+str(np.shape(Y_target)))
         # print("Shape of second term is:"+str(np.shape(np.matmul(X.transpose(),
         #                                np.linalg.inv(np.matmul(X,X.transpose()) + beta*np.identity(1+N_x+N_u))))))
-        W_out = np.matmul(np.array(Y_target), np.matmul(X.transpose(),
-                                       np.linalg.inv(np.matmul(X,X.transpose()) + beta*np.identity(1+N_x+N_u))))
+        W_out = np.matmul(np.array(Y_target), np.linalg.pinv(X))
+        # np.matmul(np.array(Y_target), np.matmul(X.transpose(),
+        #                                np.linalg.inv(np.matmul(X,X.transpose()) + beta*np.identity(1+N_x+N_u))))
         print("Shape of W_out is now:"+str(np.shape(W_out)))
         print("W_out: "+str(W_out))
         self.W_out = W_out

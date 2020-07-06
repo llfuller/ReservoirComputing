@@ -1,4 +1,5 @@
 import Lorenz63
+import Colpitts
 import ESN
 import numpy as np
 import matplotlib.pyplot as plt
@@ -47,8 +48,24 @@ if testSystem is "L63":
     # print("Shape of np.shape(Y_target)")
     # print(np.shape(Y_target))
     num_timesteps_data = np.shape(Y_target)[1]
-Y = np.empty((N_y, num_timesteps_train))
-N_x = 3 * 120
+
+if testSystem is "Colpitts":
+    t_final = 10000.0
+    dt = 0.001
+    Colpitts.run_Colpitts(t_final, dt)
+    # N_x "should be at least equal to the estimate of independent real values
+    # the reservoir has to remember from the input to solve its task"
+    # -Lukosevicius in PracticalESN
+    N_u = Colpitts.setup_ESN_params_Colpitts()[0]
+    N_y = Colpitts.setup_ESN_params_Colpitts()[1]
+    Y_target = (np.loadtxt('Colpitts_States.txt')).transpose()
+    # print("Shape of np.shape(Y_target)")
+    # print(np.shape(Y_target))
+    num_timesteps_data = np.shape(Y_target)[1]
+
+timesteps_for_prediction = 1000
+Y = np.empty((N_y, num_timesteps_train+timesteps_for_prediction))
+N_x = 3 * 200
 x_initial = np.random.rand(N_x)
 
 def plot_3D_orbits(num_timesteps, Y, Y_target):
@@ -56,7 +73,7 @@ def plot_3D_orbits(num_timesteps, Y, Y_target):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(Y_target[0, :num_timesteps_train].transpose(), Y_target[1, :num_timesteps_train].transpose(), Y_target[2, :num_timesteps_train].transpose())
-    ax.plot(Y[0, :].transpose(), Y[1, :].transpose(), Y[2, :].transpose())
+    ax.plot(Y[0, num_timesteps_train:].transpose(), Y[1, num_timesteps_train:].transpose(), Y[2, num_timesteps_train:].transpose())
     # ax = fig.gca()
     # ax.plot(Y_target[1,:num_timesteps_train])
     # ax.plot(Y[2, :num_timesteps_train])
@@ -65,9 +82,10 @@ def plot_3D_orbits(num_timesteps, Y, Y_target):
     plt.show()
 
 def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,beta,
-                N_u,N_y,N_x,x_initial,Y_target,num_timesteps_data):
+                N_u,N_y,N_x,x_initial,Y_target,num_timesteps_data, timesteps_for_prediction):
     print("Testing with " + str((extra_W_in_scale_factor, scaling_W, scaling_alpha)))
     scaling_W_in = extra_W_in_scale_factor * np.max(Y_target)  # normalization factor for inputs
+    print("W_in: "+str(extra_W_in_scale_factor))
     alpha_input = scaling_alpha * np.ones(N_x)
     sparsity = 10.0 / N_x
     after_system_sim_time = time.time() - start_time
@@ -109,12 +127,12 @@ def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,be
     print(after_W_out_train_time)
     print("after_W_out_train_time")
 
-    # Predict Y at each training timestep (this isn't training. this is prediction):
-    Y[:, 0] = Y_target[:, 0]
-    ESN_1.x = x[0]
-    x_predict = np.empty(np.shape(x))
-    x_predict[0] = x[0]
-    for n in range(1, num_timesteps_train):
+    # Predict Y at each next timestep, keeping training progress (this isn't training. this is prediction):
+    #
+    Y[:, 0:num_timesteps_train] = Y_target[:, 0:num_timesteps_train]
+    x_predict = np.empty((num_timesteps_train+timesteps_for_prediction, N_x))
+    x_predict[0:timesteps_for_prediction] = x[0:timesteps_for_prediction]
+    for n in range(num_timesteps_train, num_timesteps_train + timesteps_for_prediction):
         Y[:, n] = ESN_1.output_Y(Y[:, n - 1], x_predict[n - 1])
         ESN_1.update_reservoir(Y[:, n], x_predict[n - 1],Y[:,n-1])
         x_predict[n] = ESN_1.x
@@ -126,16 +144,18 @@ def main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,be
     np.savez('ESN_1', ESN_1=ESN_1)
 
     # print("Ratio squared error is: " + str(calculate_ratio_squared_error(Y,Y_target[:,:num_timesteps_train])))
-    print("mean_squared_error is: " + str(mean_squared_error(Y.transpose(),
-                                                             Y_target[:, :num_timesteps_train].transpose())))
+    print(np.shape(Y))
+    print("mean_squared_error is: " + str(mean_squared_error(
+        Y.transpose()[num_timesteps_train:],
+        Y_target[:, num_timesteps_train:num_timesteps_train+timesteps_for_prediction].transpose())))
     mse_array[i, j, k, l] = mean_squared_error(
-        Y.transpose(),
-        Y_target[:, :num_timesteps_train].transpose())
+        Y.transpose()[num_timesteps_train:],
+        Y_target[:, num_timesteps_train:num_timesteps_train+timesteps_for_prediction].transpose())
     print("W_out: " + str(ESN_1.W_out))
     print("Max of W_out is "+str(np.max(ESN_1.W_out)))
     plt.figure()
     plt.plot(ESN_1.W_out)
-i,j,k,l,m = 9,4,9,7,11
+i,j,k,l,m = 9,4,9,7,9
 
 extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i]
 scaling_W = scaling_W_grid[j]
@@ -143,7 +163,7 @@ scaling_alpha = alpha_grid[k]
 beta = beta_grid[l]
 scaling_W_fb = extra_W_fb_scale_factor_grid[m]
 main_method(start_time,train_start_timestep,num_timesteps_train,mse_array,beta,
-                N_u,N_y,N_x,x_initial,Y_target,num_timesteps_data)
+                N_u,N_y,N_x,x_initial,Y_target,num_timesteps_data, timesteps_for_prediction)
 plot_3D_orbits(num_timesteps_train, Y, Y_target)
 # for i, extra_W_in_scale_factor in enumerate(extra_W_in_scale_factor_grid):
 #     for j, scaling_W in enumerate(scaling_W_grid):
