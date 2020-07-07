@@ -19,7 +19,7 @@ def run_L63(t_final, dt):
 
     states = odeint(f, state0, t) #shape is (time points=400,000, spatial dims = 3)
 
-    np.savetxt('L63_States.txt',states)
+    np.savetxt('L63_States.txt',states, fmt = '%.4f')
 
 def plot_L63():
     states = np.loadtxt('L63_States.txt')

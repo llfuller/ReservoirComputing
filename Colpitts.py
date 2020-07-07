@@ -20,7 +20,7 @@ def run_Colpitts(t_final, dt):
 
     states = odeint(f, state0, t) #shape is (time points=400,000, spatial dims = 3)
 
-    np.savetxt('Colpitts_States.txt',states)
+    np.savetxt('Colpitts_States.txt',states, fmt = '%.4f')
 
 def plot_Colpitts():
     states = np.loadtxt('Colpitts_States.txt')
