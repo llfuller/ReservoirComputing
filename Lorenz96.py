@@ -30,10 +30,10 @@ def run_L96(t_final, dt):
 
     x0 = F * np.ones(N)  # Initial state (equilibrium)
     x0[19] += 0.01  # Add small perturbation to 20th variable
-    t = np.arange(0.0, 30.0, 0.01)
+    t = np.arange(0.0, t_final, dt)
 
     x = odeint(lorenz96, x0, t)
-    np.savetxt('L96_States.txt', x)
+    np.savetxt('L96_States.txt', x, fmt = '%.4f')
 
 def plot_L96():
     x = np.loadtxt('L96_States.txt')
