@@ -39,8 +39,8 @@ class ESN:
         # N_x integer
         # sparsity between 0 and 1 inclusive
         # scaling_W >= 1
-        if os.path.isfile('./W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt'):
-            W = np.loadtxt('W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt')
+        if os.path.isfile('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt'):
+            W = np.loadtxt('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt')
         else:
             # Build sparse adjacency matrix W:
             W_unnormalized = sp.multiply(sp.random.choice((-1,1), size=(N_x,N_x)),
@@ -50,7 +50,7 @@ class ESN:
             spectral_radius = np.max(abs(np.linalg.eigvals(W_unnormalized)))
             print("SPECTRAL RADIUS IS IS "+str(spectral_radius))
             W = np.float32(np.multiply( scaling_W, np.divide(W_unnormalized,spectral_radius) ))
-            np.savetxt('W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt',W, fmt = '%.4f')
+            np.savetxt('W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt',W, fmt = '%.4f')
         return W
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
@@ -61,16 +61,16 @@ class ESN:
         W_fb = (1.0/scaling_W_fb)*np.random.random((N_x, N_u))
         return W_fb
 
-    def update_reservoir(self, u, n, y_nm1):
+    def update_reservoir(self, u, n, y_np1):
         # u is input at specific time
         #   u has shape (N_u + 1)
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
         # if n==1:
         #     print("x(n-1) is "+str(self.x[n-1]))
-        x_n_tilde = np.tanh(np.matmul(self.W,self.x[n-1])
+        x_n_tilde = np.tanh(np.matmul(self.W,self.x[n])
                             + np.matmul(self.W_in, np.hstack((np.array([1]),u)))
-                            + np.matmul(self.W_fb, y_nm1))
-        self.x[n] = np.multiply((1-self.alpha_matrix), self.x[n-1]) \
+                            + np.matmul(self.W_fb, y_np1))
+        self.x[n+1] = np.multiply((1-self.alpha_matrix), self.x[n]) \
               + np.multiply(self.alpha_matrix, x_n_tilde)
 
     def output_Y(self, u, n):
@@ -90,9 +90,10 @@ class ESN:
     def calculate_W_out(self, Y_target, N_x, beta, train_start_timestep, train_end_timestep):
         # see Lukosevicius Practical ESN eqtn 11
         # Using ridge regression
+        print(np.shape(Y_target))
         N_u = np.shape(Y_target)[0]
         X = np.vstack((np.ones((1,train_end_timestep-train_start_timestep)),
-                       Y_target,
+                       Y_target[:,train_start_timestep:train_end_timestep],
                        self.x[train_start_timestep:train_end_timestep].transpose()))
         # print("Shape of X is:"+str(np.shape(X)))
         # print("Shape of x is:"+str(np.shape(x)))
@@ -100,8 +101,9 @@ class ESN:
         # print("Shape of second term is:"+str(np.shape(np.matmul(X.transpose(),
         #                                np.linalg.inv(np.matmul(X,X.transpose()) + beta*np.identity(1+N_x+N_u))))))
         # Ridge Regression
-        W_out = np.matmul(np.array(Y_target), np.matmul(X.transpose(),
-                                                        np.linalg.inv(np.matmul(X,X.transpose()) + beta*np.identity(1+N_x+N_u))))
+        W_out = np.matmul(np.array(Y_target[:, train_start_timestep+1:train_end_timestep+1]),
+                          np.matmul(X.transpose(),
+                                    np.linalg.inv(np.matmul(X,X.transpose()) + beta*np.identity(1+N_x+N_u))))
         # plt.figure()
         # plt.plot(X)
         # plt.show()

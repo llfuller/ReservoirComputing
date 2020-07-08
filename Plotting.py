@@ -1,12 +1,22 @@
 import matplotlib.pyplot as plt
 import numpy as np
-def plot_3D_orbits(Y, Y_target, train_end_timestep):
+def plot_3D_orbits(Y, Y_target, train_end_timestep,system_name,params,save_or_display="save"):
     # Plot Y and Y_target for comparison:
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(Y_target[0, :train_end_timestep].transpose(), Y_target[1, :train_end_timestep].transpose(), Y_target[2, :train_end_timestep].transpose())
     ax.plot(Y[0, train_end_timestep:].transpose(), Y[1, train_end_timestep:].transpose(), Y[2, train_end_timestep:].transpose())
-    plt.show()
+    if save_or_display=="save":
+        plt.savefig("3D_Orbit_Plots/"+
+                    system_name+
+                    "_orbit_params_("+
+                    str(round(params[0],4))+ ","+
+                    str(round(params[1],4))+ ","+
+                    str(round(params[2],4))+ ","+
+                    str(round(params[3],4))+ ","+
+                    str(round(params[4],4))+").png")
+    elif save_or_display=="display":
+        plt.show()
 
 def plot_activations(Y, x):
     fig = plt.figure()
