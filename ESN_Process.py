@@ -20,9 +20,11 @@ def build_and_train_and_predict(start_time,train_start_timestep,train_end_timest
     print_timing(print_timings_boolean, start_time, "after_system_sim_time")
 
     # Construct ESN architecture
-    ESN_1 = ESN.ESN(N_x, N_u, N_y, sparsity,
+    print("Now building ESN at time " + str(time.time()-start_time))
+    ESN_1 = ESN.ESN_GPU_2(N_x, N_u, N_y, sparsity,
                     x_initial, alpha_input, scaling_W,
                     scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
+    print("Done building ESN at time " + str(time.time()-start_time))
     print_timing(print_timings_boolean, start_time, "after_ESN_construction_time")
 
     # Create "echoes" and record the activations

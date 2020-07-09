@@ -14,18 +14,18 @@ np.random.seed(2020)
 #=======================================================================================================================
 # Run Parameters
 #=======================================================================================================================
-system_name = "L63"
+system_name = "Colpitts"
 run_system = False # Generate new data from chosen system
-N_x = 360 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
+N_x = 9000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
-perform_grid_search = True
+perform_grid_search = False
 sparsity = 5.0 / N_x # TODO: What if symmetric?
-train_start_timestep = 2000
-train_end_timestep = 30000 # Timestep at which training ends.
-timesteps_for_prediction = 30000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
+train_start_timestep = 0
+train_end_timestep = 10000 # Timestep at which training ends.
+timesteps_for_prediction = 6000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
-save_or_display = '2d display' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = '3d display' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = False
 
@@ -77,14 +77,14 @@ alpha_grid = np.float32(range(1,6))/100.0 # uniform leaking rate grid
 beta_grid = np.logspace(-9, -3, 10)
 extra_W_fb_scale_factor_grid = np.float32(range(1,1000))/5.0 # input scalings grid
 
-# extra_W_in_scale_factor = 0.5 #i
-# scaling_W = 0.175 # j, scaling_W is for tuning procedure after normalization of W
-# scaling_alpha = 0.04 # k
-# beta = 0.00001 # l
-extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i] #i
-scaling_W = scaling_W_grid[j] # j, scaling_W is for tuning procedure after normalization of W
-scaling_alpha = alpha_grid[k] # k
-beta = beta_grid[l] # l
+extra_W_in_scale_factor = 0.5 #i
+scaling_W = 0.175 # j, scaling_W is for tuning procedure after normalization of W
+scaling_alpha = 0.04 # k
+beta = 0.00001 # l
+# extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i] #i
+# scaling_W = scaling_W_grid[j] # j, scaling_W is for tuning procedure after normalization of W
+# scaling_alpha = alpha_grid[k] # k
+# beta = beta_grid[l] # l
 scaling_W_fb = 1.0
 scaling_W_in = extra_W_in_scale_factor * np.max(state_target)  # normalization factor for inputs
 
@@ -98,6 +98,7 @@ mse_array = 100000000*np.ones((np.shape(extra_W_in_scale_factor_grid)[0],
 # Train and Predict
 #=======================================================================================================================
 x_initial = np.random.rand(N_x)
+print("Starting ESN_Process at time "+str(time.time()-start_time))
 if perform_grid_search:
     list_of_beta_to_test = beta_grid
     for i, extra_W_in_scale_factor in enumerate(extra_W_in_scale_factor_grid):
@@ -134,3 +135,4 @@ else: # Using selected i,j,k,l at start of script
                                                         scaling_W, extra_W_in_scale_factor, save_or_display,
                                                         state, sparsity, dev_length_multiplier, perform_grid_search,
                                                         param_array=[i,j,k,l,m])
+print("Done at time: "+str(time.time()-start_time))
