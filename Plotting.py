@@ -1,24 +1,51 @@
 import matplotlib.pyplot as plt
 import numpy as np
-def plot_3D_orbits(Y, Y_target, train_end_timestep,system_name,params,save_or_display="save"):
+def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_name,timesteps_for_prediction,
+                   params,save_or_display="save"):
     # Plot Y and Y_target for comparison:
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    ax.plot(Y_target[0, :train_end_timestep].transpose(), Y_target[1, :train_end_timestep].transpose(), Y_target[2, :train_end_timestep].transpose())
-    ax.plot(Y[0, train_end_timestep:].transpose(), Y[1, train_end_timestep:].transpose(), Y[2, train_end_timestep:].transpose())
-    if save_or_display=="save":
-        plt.savefig("3D_Orbit_Plots/"+
-                    system_name+
-                    "_orbit_params_("+
-                    str(round(params[0],4))+ ","+
-                    str(round(params[1],4))+ ","+
-                    str(round(params[2],4))+ ","+
-                    str(round(params[3],4))+ ","+
-                    str(round(params[4],4))+").png")
-    elif save_or_display=="display":
+    if '3d' in save_or_display.lower():
+        ax = fig.gca(projection='3d')
+        ax.plot(Y_target[0, :train_end_timestep].transpose(), Y_target[1, :train_end_timestep].transpose(), Y_target[2, :train_end_timestep].transpose())
+        ax.plot(Y[0, train_end_timestep:].transpose(), Y[1, train_end_timestep:].transpose(), Y[2, train_end_timestep:].transpose())
+        ax.plot(Y_target[0,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose(),
+                Y_target[1, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose(),
+                Y_target[2, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())
+        plt.title(system_name+" after training timesteps: "+ str(train_start_timestep)+" - "+str(train_end_timestep))
+
+        if "save" in save_or_display.lower():
+            plt.savefig("3D_Orbit_Plots/"+
+                        system_name + "/" +
+                        system_name+
+                        "_orbit_params_("+
+                        str(round(params[0],4))+ ","+
+                        str(round(params[1],4))+ ","+
+                        str(round(params[2],4))+ ","+
+                        "{:.1e}".format(params[3])+ ","+
+                        str(round(params[4],4))+").png")
+    if '2d' in save_or_display.lower():
+        ax = fig.gca()
+        ax.plot(Y[0, train_end_timestep:].transpose())
+        ax.plot(Y_target[0, train_end_timestep:train_end_timestep + timesteps_for_prediction].transpose())
+        plt.ylabel("x coord")
+        plt.xlabel("time index after training")
+        plt.title(
+            system_name + " after training timesteps: " + str(train_start_timestep) + " - " + str(train_end_timestep))
+        if "save" in save_or_display.lower():
+            plt.savefig("2D_x_Plots/" +
+                        system_name + "/" +
+                        system_name +
+                        "_orbit_params_(" +
+                        str(round(params[0], 4)) + "," +
+                        str(round(params[1], 4)) + "," +
+                        str(round(params[2], 4)) + "," +
+                        "{:.1e}".format(params[3])+ ","+
+                        str(round(params[4], 4)) + ").png")
+    if "display" in save_or_display:
         plt.show()
 
 def plot_activations(Y, x):
+    # Plots reservoir activations strength (z-axis) against time and index.
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     x_x = []
