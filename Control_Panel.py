@@ -2,6 +2,7 @@ import Lorenz63
 import Lorenz96
 import Colpitts
 import ESN_Process
+import ESN
 import numpy as np
 import time
 
@@ -16,16 +17,16 @@ np.random.seed(2020)
 #=======================================================================================================================
 system_name = "Colpitts"
 run_system = False # Generate new data from chosen system
-N_x = 9000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
+N_x = 7000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
-perform_grid_search = False
-sparsity = 5.0 / N_x # TODO: What if symmetric?
-train_start_timestep = 0
-train_end_timestep = 10000 # Timestep at which training ends.
+perform_grid_search = True
+sparsity = 10.0 / N_x # TODO: What if symmetric?
+train_start_timestep = 2000
+train_end_timestep = 30000 # Timestep at which training ends.
 timesteps_for_prediction = 6000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
-save_or_display = '3d display' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = '2d save' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = False
 
@@ -77,14 +78,14 @@ alpha_grid = np.float32(range(1,6))/100.0 # uniform leaking rate grid
 beta_grid = np.logspace(-9, -3, 10)
 extra_W_fb_scale_factor_grid = np.float32(range(1,1000))/5.0 # input scalings grid
 
-extra_W_in_scale_factor = 0.5 #i
-scaling_W = 0.175 # j, scaling_W is for tuning procedure after normalization of W
-scaling_alpha = 0.04 # k
-beta = 0.00001 # l
-# extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i] #i
-# scaling_W = scaling_W_grid[j] # j, scaling_W is for tuning procedure after normalization of W
-# scaling_alpha = alpha_grid[k] # k
-# beta = beta_grid[l] # l
+# extra_W_in_scale_factor = 0.5 #i
+# scaling_W = 0.175 # j, scaling_W is for tuning procedure after normalization of W
+# scaling_alpha = 0.04 # k
+# beta = 0.00001 # l
+extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i] #i
+scaling_W = scaling_W_grid[j] # j, scaling_W is for tuning procedure after normalization of W
+scaling_alpha = alpha_grid[k] # k
+beta = beta_grid[l] # l
 scaling_W_fb = 1.0
 scaling_W_in = extra_W_in_scale_factor * np.max(state_target)  # normalization factor for inputs
 
@@ -95,10 +96,22 @@ mse_array = 100000000*np.ones((np.shape(extra_W_in_scale_factor_grid)[0],
                       np.shape(beta_grid)[0]))
 
 #=======================================================================================================================
-# Train and Predict
+# Construct, Train, and Predict
 #=======================================================================================================================
 x_initial = np.random.rand(N_x)
-print("Starting ESN_Process at time "+str(time.time()-start_time))
+
+# Construct ESN (parameters will be reset in the loop later on)
+print("Now building ESN at time " + str(time.time() - start_time))
+if N_x <= 6000:
+    ESN_Build_Method = ESN.ESN_CPU
+elif N_x > 6000:
+    ESN_Build_Method = ESN.ESN_GPU
+ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity,
+                         x_initial, scaling_alpha * np.ones(N_x), scaling_W,
+                         scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
+print("Done building ESN at time " + str(time.time() - start_time))
+
+# Training and Prediction
 if perform_grid_search:
     list_of_beta_to_test = beta_grid
     for i, extra_W_in_scale_factor in enumerate(extra_W_in_scale_factor_grid):
@@ -108,7 +121,8 @@ if perform_grid_search:
                 print("------------------\n"
                 "Testing for "+str((extra_W_in_scale_factor,scaling_W,scaling_alpha,beta,scaling_W_fb)))
                 print("Has Indices: "+str((i,j,k,l,0)))
-                ESN_Process.build_and_train_and_predict(start_time, train_start_timestep, train_end_timestep,
+                ESN_Process.build_and_train_and_predict(ESN_1,
+                                                        start_time, train_start_timestep, train_end_timestep,
                                                         mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
                                                         state_target,
                                                         scaling_W_fb, timesteps_for_prediction, scaling_W_in,
@@ -127,12 +141,10 @@ if perform_grid_search:
     np.savez("mse_array_"+str(N_x)+".npz",mse_array=mse_array)
 else: # Using selected i,j,k,l at start of script
     list_of_beta_to_test = [beta]
-    ESN_Process.build_and_train_and_predict(start_time, train_start_timestep, train_end_timestep,
-                                                        mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
-                                                        state_target,
-                                                        scaling_W_fb, timesteps_for_prediction, scaling_W_in,
-                                                        system_name, print_timings_boolean, scaling_alpha,
-                                                        scaling_W, extra_W_in_scale_factor, save_or_display,
-                                                        state, sparsity, dev_length_multiplier, perform_grid_search,
-                                                        param_array=[i,j,k,l,m])
+    ESN_Process.build_and_train_and_predict(ESN_1, start_time, train_start_timestep, train_end_timestep,
+                                            mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
+                                            state_target, scaling_W_fb, timesteps_for_prediction, scaling_W_in,
+                                            system_name, print_timings_boolean, scaling_alpha, scaling_W,
+                                            extra_W_in_scale_factor, save_or_display, state, sparsity,
+                                            dev_length_multiplier, perform_grid_search, param_array=[i,j,k,l,m])
 print("Done at time: "+str(time.time()-start_time))

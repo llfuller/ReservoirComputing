@@ -1,7 +1,6 @@
 import time
 import numpy as np
 import Plotting
-import ESN
 from sklearn.metrics import mean_squared_error
 
 
@@ -10,22 +9,16 @@ def print_timing(print_timings_boolean, start_time, variable1_str):
         print(variable1_str+str(time.time()-start_time)+"\n-----------------------")
 
 
-def build_and_train_and_predict(start_time,train_start_timestep,train_end_timestep,mse_array,list_of_beta_to_test,
-                                N_u,N_y,N_x,x_initial,state_target, scaling_W_fb, timesteps_for_prediction,
-                                scaling_W_in, system_name, print_timings_boolean, scaling_alpha, scaling_W,
-                                extra_W_in_scale_factor, save_or_display, state,sparsity, dev_length_multiplier,
-                                perform_grid_search, param_array):
+def build_and_train_and_predict(ESN_1, start_time,train_start_timestep,train_end_timestep,mse_array,
+                                list_of_beta_to_test, N_u,N_y,N_x,x_initial,state_target, scaling_W_fb,
+                                timesteps_for_prediction, scaling_W_in, system_name, print_timings_boolean,
+                                scaling_alpha, scaling_W, extra_W_in_scale_factor, save_or_display, state, sparsity,
+                                dev_length_multiplier, perform_grid_search, param_array):
+    # First thing: Set parameters of ESN_1 correctly for this run:
     i,j,k,l,m = param_array
-    alpha_input = scaling_alpha * np.ones(N_x)
-    print_timing(print_timings_boolean, start_time, "after_system_sim_time")
-
-    # Construct ESN architecture
-    print("Now building ESN at time " + str(time.time()-start_time))
-    ESN_1 = ESN.ESN_GPU_2(N_x, N_u, N_y, sparsity,
-                    x_initial, alpha_input, scaling_W,
-                    scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
-    print("Done building ESN at time " + str(time.time()-start_time))
-    print_timing(print_timings_boolean, start_time, "after_ESN_construction_time")
+    ESN_1.build_W_in(N_x, N_u, scaling_W_in)
+    ESN_1.build_W_fb(N_x, N_u, scaling_W_fb)
+    ESN_1.alpha_matrix = scaling_alpha * np.ones(N_x)
 
     # Create "echoes" and record the activations
     # Run ESN for however many timesteps necessary to get enough activation elements x of reservoir
@@ -36,7 +29,7 @@ def build_and_train_and_predict(start_time,train_start_timestep,train_end_timest
     print_timing(print_timings_boolean, start_time, "after_ESN_feed_time")
 
     worth_predicting = True
-
+    # calculate tolerance for output comparison with target to judge wether to quit prediction
     if perform_grid_search:
         dev_length = dev_length_multiplier\
                      *(np.max(state_target[:,train_end_timestep:train_end_timestep+timesteps_for_prediction] -
@@ -61,10 +54,9 @@ def build_and_train_and_predict(start_time,train_start_timestep,train_end_timest
                     worth_predicting = False
                     break # terminates prediction. Not worth predicting this
         if worth_predicting:
+            # This runs if predictions are within allowed range of target (set by dev_length)
             print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
-
             # np.savez('ESN_1', ESN_1=ESN_1)
-
             print("mean_squared_error is: " + str(mean_squared_error(
                 state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],
                 state[:, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())))
