@@ -6,9 +6,9 @@ import numpy as np
 # Code directly from Wikipedia page on the "Lorenz 96 Model" with minor modifications
 
 
-def run_L96(t_final, dt):
+def run_L96(dims, t_final, dt):
     # These are our constants
-    N = 36  # Number of variables, default 36
+    N = dims  # Number of variables, default 36
     F = 8  # Forcing
 
     def lorenz96(x, t):
@@ -29,7 +29,7 @@ def run_L96(t_final, dt):
         return d
 
     x0 = F * np.ones(N)  # Initial state (equilibrium)
-    x0[19] += 0.01  # Add small perturbation to 20th variable, default index 19
+    x0[2] += 0.01  # Add small perturbation to 20th variable, default index 19
     t = np.arange(0.0, t_final, dt)
 
     x = odeint(lorenz96, x0, t)
@@ -45,9 +45,3 @@ def plot_L96():
     ax.set_ylabel('$x_2$')
     ax.set_zlabel('$x_3$')
     plt.show()
-
-
-def setup_ESN_params_L96():
-    N_u = 36
-    N_y = 36
-    return [N_u, N_y]

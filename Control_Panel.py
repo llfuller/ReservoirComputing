@@ -52,10 +52,12 @@ if system_name is "L63":
     num_timesteps_data = np.shape(state_target)[1]
 
 if system_name is "L96":
+    dims = 5 # I've only seen this work well up to 5 dimensions
     if run_system:
-        Lorenz96.run_L96(t_final = 2000.0,
+        Lorenz96.run_L96(dims,
+                         t_final = 2000.0,
                          dt = 0.01)
-    N_u, N_y = 36, 36
+    N_u, N_y = dims, dims
     state_target = (np.loadtxt('L96_States.txt')).transpose()
     num_timesteps_data = np.shape(state_target)[1]
 
