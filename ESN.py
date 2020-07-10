@@ -21,7 +21,7 @@ class ESN_CPU: # TODO: Speed this up! Parallelize or use sparse?
     # W_out has shape (N_y, 1 + N_x + N_u)
     W_out = sp.zeros((1,1))
 
-    def __init__(self, N_x, N_u, N_y, sparsity,
+    def __init__(self, N_x, N_u, N_y, sparsity_tuples,
                  x_initial, alpha_input, scaling_W,
                  scaling_W_in, scaling_W_fb,
                  train_end_timestep, timesteps_for_prediction):
@@ -29,29 +29,42 @@ class ESN_CPU: # TODO: Speed this up! Parallelize or use sparse?
         # input_W_in has shape (N_x, N_u + 1)
         # x_initial has shape (N_x)
         # alpha_input has shape (N_x)
-        self.W = self.build_W(N_x, sparsity, scaling_W)#input_W
+        self.W = self.build_W(N_x, sparsity_tuples, scaling_W)#input_W
         self.W_in = self.build_W_in(N_x, N_u, scaling_W_in)#input_W_in
         self.W_fb = self.build_W_fb(N_x, N_u, scaling_W_fb)#input_W_fb
         self.x = sp.zeros((train_end_timestep+ timesteps_for_prediction, N_x))
         self.x[0] = x_initial
         self.alpha_matrix = alpha_input
 
-    def build_W(self, N_x, sparsity, scaling_W):
+    def build_W(self, N_x, sparsity_tuples, scaling_W):
         # N_x integer
         # sparsity between 0 and 1 inclusive
         # scaling_W >= 1
-        if os.path.isfile('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt'):
-            W = sp.loadtxt('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt')
+        sparsity_tuples_list = tuple([(a_row[0],a_row[1]) for a_row in sparsity_tuples])
+        if os.path.isfile('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt'):
+            # If file already exists
+            W = sp.loadtxt('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt')
         else:
+            # If file doesn't yet exist
+            # No notion of locality here
+            # Designate connection or no connection at each element of the (N_x) by (N_x) matrix:
+            W_sparsity_list = []
+            # Rows used for each sparsity
+            rows_used_for_sparsity = (sp.around(sp.multiply(sparsity_tuples[:,1],N_x))).astype(int)
+            for i, sparsity_pair in enumerate(sparsity_tuples):
+                this_density = sparsity_pair[0]
+                W_sparsity_list.append(sp.sparse.random(rows_used_for_sparsity[i], N_x,
+                                                        density=this_density).todense())
+                    #TODO: Make sure there are no 'holes!' in W
             # Build sparse adjacency matrix W:
             W_unnormalized = sp.multiply(sp.random.choice((-1,1), size=(N_x,N_x)),
-                                         sp.sparse.random(N_x,N_x, density = sparsity).todense())
+                                         sp.vstack(W_sparsity_list))
             # Normalize by largest eigenvalue and additional scaling factor
             # to control decrease of spectral radius.
             spectral_radius = sp.amax(abs(sp.linalg.eigvals(W_unnormalized)))
             print("SPECTRAL RADIUS IS IS "+str(spectral_radius))
             W = sp.float32(sp.multiply( scaling_W, sp.divide(W_unnormalized,spectral_radius) ))
-            sp.savetxt('W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity)+'.txt',W, fmt = '%.4f')
+            sp.savetxt('W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt',W, fmt = '%.4f')
         return W
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
@@ -63,7 +76,6 @@ class ESN_CPU: # TODO: Speed this up! Parallelize or use sparse?
         return W_fb
 
     def update_reservoir(self, u, n, Y):
-        # print("Updating reservoir...." + str(time.time()))
         # u is input at specific time
         #   u has shape (N_u (3 for L63))
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
@@ -156,7 +168,6 @@ class ESN_GPU: #
         return W_fb
 
     def update_reservoir(self, u, n, Y):
-        # print("Updating reservoir...."+str(time.time()))
         # u is input at specific time
         #   u has shape (N_u (3 for L63))
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
@@ -185,5 +196,8 @@ class ESN_GPU: #
         # Eqtn 4
         concatinated_matrix = sp.hstack((sp.hstack((one_by_one,u)),
                                          self.x[n]))
-        output_Y_return = cp.asnumpy(cp.matmul(self.W_out, cp.array(concatinated_matrix)))
+        if sp.shape(self.x[n])[0] < 6000:
+            output_Y_return = sp.matmul(self.W_out, concatinated_matrix)
+        else:
+            output_Y_return = cp.asnumpy(cp.matmul(self.W_out, cp.array(concatinated_matrix)))
         return output_Y_return

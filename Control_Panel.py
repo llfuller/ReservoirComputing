@@ -17,18 +17,26 @@ np.random.seed(2020)
 #=======================================================================================================================
 system_name = "Colpitts"
 run_system = False # Generate new data from chosen system
-N_x = 7000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
+N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
 perform_grid_search = True
-sparsity = 10.0 / N_x # TODO: What if symmetric?
+sparsity_tuples = np.array([[2.0/N_x,0.95],
+                            [20.0/N_x,0.05]
+                            ])
+# First value: sparisty (numerator is average number of connections FROM one node TO other nodes),
+# second value: proportion of network with that sparsity
+sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 2000
-train_end_timestep = 30000 # Timestep at which training ends.
-timesteps_for_prediction = 6000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
+train_end_timestep = 5000 # Timestep at which training ends.
+timesteps_for_prediction = 1000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
-save_or_display = '2d save' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = '3d display' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = False
+# Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
+dev_length_multiplier = 2.0
+
 
 start_time = time.time()
 
@@ -37,16 +45,16 @@ start_time = time.time()
 #=======================================================================================================================
 if system_name is "L63":
     if run_system:
-        Lorenz63.run_L63(t_final = 1000.0,
-                         dt = 0.001)
+        Lorenz63.run_L63(t_final = 20000.0,
+                         dt = 0.02)
     N_u, N_y = 3, 3
     state_target = (np.loadtxt('L63_States.txt')).transpose()
     num_timesteps_data = np.shape(state_target)[1]
 
 if system_name is "L96":
     if run_system:
-        Lorenz96.run_L96(t_final = 1000.0,
-                         dt = 0.001)
+        Lorenz96.run_L96(t_final = 2000.0,
+                         dt = 0.01)
     N_u, N_y = 36, 36
     state_target = (np.loadtxt('L96_States.txt')).transpose()
     num_timesteps_data = np.shape(state_target)[1]
@@ -54,7 +62,7 @@ if system_name is "L96":
 if system_name is "Colpitts":
     if run_system:
         Colpitts.run_Colpitts(t_final = 10000.0,
-                              dt = 0.001)
+                              dt = 0.1)
     N_u, N_y = 3, 3
     state_target = (np.loadtxt('Colpitts_States.txt')).transpose()
     num_timesteps_data = np.shape(state_target)[1]
@@ -63,25 +71,23 @@ state_target = np.divide(state_target,np.max(np.abs(state_target))) # Actual inp
 state = np.empty((N_y, train_end_timestep+timesteps_for_prediction)) # Input to reservoir. Before train_end_timestep,
 # state is identical to state_target. After that index, it will differ as this is a prediction of the state by the
 # reservoir.
-# Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
-dev_length_multiplier = 0.4
-
+# Lorenz96.plot_L96()
 #=======================================================================================================================
 # Grid Search Info
 #=======================================================================================================================
-i,j,k,l,m = 4,2,3,0,0 # Indices to use in each grid if not grid searching
+i,j,k,l,m = 0,0,0,0,0 # Indices to use in each grid if not grid searching
 # For parameter search by grid search:
-extra_W_in_scale_factor_grid = np.float32(range(1,9))/10.0 # input scalings grid
-scaling_W_grid = np.float32(range(5,8))/40.0 # direct multiplier for spectral radius grid after normalization occurs
-alpha_grid = np.float32(range(1,6))/100.0 # uniform leaking rate grid
+extra_W_in_scale_factor_grid = np.float32(range(1,5))/5.0 # input scalings grid, makes no difference for L96?
+scaling_W_grid = np.float32(range(1,4))/3.0 # direct multiplier for spectral radius grid after normalization occurs
+alpha_grid = np.float32(range(5,7))/10.0 # uniform leaking rate grid
 # Secondary parameters to grid search
-beta_grid = np.logspace(-9, -3, 10)
+beta_grid = np.logspace(-2, -0, 2)
 extra_W_fb_scale_factor_grid = np.float32(range(1,1000))/5.0 # input scalings grid
 
 # extra_W_in_scale_factor = 0.5 #i
 # scaling_W = 0.175 # j, scaling_W is for tuning procedure after normalization of W
-# scaling_alpha = 0.04 # k
-# beta = 0.00001 # l
+# scaling_alpha = 0.5 # k
+# beta = 0.001 # l
 extra_W_in_scale_factor = extra_W_in_scale_factor_grid[i] #i
 scaling_W = scaling_W_grid[j] # j, scaling_W is for tuning procedure after normalization of W
 scaling_alpha = alpha_grid[k] # k
@@ -104,9 +110,9 @@ x_initial = np.random.rand(N_x)
 print("Now building ESN at time " + str(time.time() - start_time))
 if N_x <= 6000:
     ESN_Build_Method = ESN.ESN_CPU
-elif N_x > 6000:
-    ESN_Build_Method = ESN.ESN_GPU
-ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity,
+else:
+    ESN_Build_Method = ESN.ESN_GPU #TODO: Update this with sparity_tuples or else it won't work right now
+ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity_tuples,
                          x_initial, scaling_alpha * np.ones(N_x), scaling_W,
                          scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
 print("Done building ESN at time " + str(time.time() - start_time))
@@ -118,9 +124,7 @@ if perform_grid_search:
         for j, scaling_W in enumerate(scaling_W_grid):
             for k, scaling_alpha in enumerate(alpha_grid):
                 # The beta loop is located inside ESN_Process because that is more efficient
-                print("------------------\n"
-                "Testing for "+str((extra_W_in_scale_factor,scaling_W,scaling_alpha,beta,scaling_W_fb)))
-                print("Has Indices: "+str((i,j,k,l,0)))
+                print("------------------\n")
                 ESN_Process.build_and_train_and_predict(ESN_1,
                                                         start_time, train_start_timestep, train_end_timestep,
                                                         mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,

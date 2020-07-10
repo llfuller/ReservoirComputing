@@ -25,18 +25,12 @@ def build_and_train_and_predict(ESN_1, start_time,train_start_timestep,train_end
     for n in range(0, train_end_timestep):
         # Using Teacher Forcing method:
         ESN_1.update_reservoir(state_target[:, n], n, state_target[:,n+1])
-        # print(ESN_1.W_fb)
     print_timing(print_timings_boolean, start_time, "after_ESN_feed_time")
 
-    worth_predicting = True
-    # calculate tolerance for output comparison with target to judge wether to quit prediction
-    if perform_grid_search:
-        dev_length = dev_length_multiplier\
-                     *(np.max(state_target[:,train_end_timestep:train_end_timestep+timesteps_for_prediction] -
-                                  np.min(state_target[:,train_end_timestep:train_end_timestep+
-                                                                           timesteps_for_prediction])))
-
     for l, beta in enumerate(list_of_beta_to_test):
+        print("Testing for " + str((extra_W_in_scale_factor, scaling_W, scaling_alpha, beta, scaling_W_fb)))
+        print("Has Indices: " + str((i, j, k, l, 0)))
+
         # Compute W_out (readout coefficients)
         ESN_1.calculate_W_out(state_target, N_x, beta, train_start_timestep,
                               train_end_timestep)
@@ -48,32 +42,25 @@ def build_and_train_and_predict(ESN_1, start_time,train_start_timestep,train_end
         for n in range(train_end_timestep, train_end_timestep + timesteps_for_prediction-1):
             state[:, n+1] = ESN_1.output_Y(state[:, n], n)
             ESN_1.update_reservoir(state[:, n], n, state[:,n+1])
-            if perform_grid_search: # This if statement is a trick to avoid unnecessary calculation during grid search
-                if np.max(abs(state[:,n+1]-state_target[:,n+1]))>dev_length:
-                    print("Not worth predicting for beta="+str(beta))
-                    worth_predicting = False
-                    break # terminates prediction. Not worth predicting this
-        if worth_predicting:
-            # This runs if predictions are within allowed range of target (set by dev_length)
-            print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
-            # np.savez('ESN_1', ESN_1=ESN_1)
-            print("mean_squared_error is: " + str(mean_squared_error(
-                state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],
-                state[:, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())))
-            mse_array[i, j, k, l] = mean_squared_error(
-                state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],
-                state[:, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())
-            print("Number of large W_out:"+str(np.sum(ESN_1.W_out[ESN_1.W_out>0.5])))
-            print("Max of W_out is "+str(np.max(ESN_1.W_out)))
-            # plt.figure()
-            # plt.plot(ESN_1.W_out)
-            # Plotting.plot_activations(state_target, ESN_1.x)
-            if save_or_display is not None:
-                Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name,
-                                        timesteps_for_prediction,
-                                        [extra_W_in_scale_factor,
-                                         scaling_W,
-                                         scaling_alpha,
-                                         beta,
-                                         scaling_W_fb],
-                                        save_or_display)
+        print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
+        # np.savez('ESN_1', ESN_1=ESN_1)
+        print("mean_squared_error is: " + str(mean_squared_error(
+            state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],
+            state[:, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())))
+        mse_array[i, j, k, l] = mean_squared_error(
+            state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],
+            state[:, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())
+        print("Number of large W_out:"+str(np.sum(ESN_1.W_out[ESN_1.W_out>0.5])))
+        print("Max of W_out is "+str(np.max(ESN_1.W_out)))
+        # plt.figure()
+        # plt.plot(ESN_1.W_out)
+        # Plotting.plot_activations(state_target, ESN_1.x)
+        if save_or_display is not None:
+            Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name,
+                                    timesteps_for_prediction,
+                                    [extra_W_in_scale_factor,
+                                     scaling_W,
+                                     scaling_alpha,
+                                     beta,
+                                     scaling_W_fb],
+                                    save_or_display)
