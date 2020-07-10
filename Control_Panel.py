@@ -15,8 +15,8 @@ np.random.seed(2020)
 #=======================================================================================================================
 # Run Parameters
 #=======================================================================================================================
-system_name = "Colpitts"
-run_system = False # Generate new data from chosen system
+system_name = "L96"
+run_system = True # Generate new data from chosen system
 N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
