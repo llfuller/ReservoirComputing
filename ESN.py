@@ -7,7 +7,7 @@ import time
 # Cupy resource: https://docs-cupy.chainer.org/en/stable/reference/ndarray.html
 
 """Build an Echo State Network"""
-class ESN_CPU: # TODO: Speed this up! Parallelize or use sparse?
+class ESN_CPU: #
     # connection adjacency matrix W (nonlocal):
     W = sp.zeros((1,1))
     # reservoir nodes' activations:
@@ -81,7 +81,8 @@ class ESN_CPU: # TODO: Speed this up! Parallelize or use sparse?
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
         x_n_tilde = sp.tanh(sp.matmul(self.W,self.x[n])
                             + sp.matmul(self.W_in, sp.hstack((sp.array([1]),u)))
-                            + sp.matmul(self.W_fb, Y))
+                            + sp.matmul(self.W_fb, Y)
+                            ) # TODO: Add derivative term?
         self.x[n+1] = sp.multiply((1-self.alpha_matrix), self.x[n]) \
               + sp.multiply(self.alpha_matrix, x_n_tilde)
 

@@ -32,6 +32,7 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         plt.title(
             system_name + " after training timesteps: " + str(train_start_timestep) + " - " + str(train_end_timestep))
         print("Saving for beta = "+str(params[3]))
+        print(".....")
         if "save" in save_or_display.lower():
             plt.savefig("2D_x_Plots/" +
                         system_name + "/" +
