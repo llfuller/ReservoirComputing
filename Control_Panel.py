@@ -19,7 +19,7 @@ np.random.seed(2020)
 #=======================================================================================================================
 system_name = "L63"
 run_system = False # Generate new data from chosen system
-N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
+N_x = 1000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
 perform_grid_search = False
@@ -106,8 +106,10 @@ print("Now building ESN at time " + str(time.time() - start_time))
 placeholder_array = np.ones(1) # will be replaced later
 if N_x <= 6000:
     ESN_Build_Method = ESN.ESN_CPU
+    print("Using CPU")
 else:
-    ESN_Build_Method = ESN.ESN_GPU #TODO: Update this with sparsity_tuples or else it won't work right now
+    ESN_Build_Method = ESN.ESN_GPU
+    print("Using GPU")
 ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity_tuples,
                          x_initial, scaling_alpha * np.ones(N_x), scaling_W,
                          scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)

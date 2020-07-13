@@ -23,8 +23,7 @@ def Set_Grid(state_target, perform_grid_search):
         list_of_scaling_alpha = [0.5]
         list_of_beta_to_test = [0.001]
         list_of_scaling_W_fb = [1.0]
-        extra_W_in_scale_factor = 0.5
-        list_of_scaling_W_in = [extra_W_in_scale_factor * np.max(state_target)]
+        list_of_scaling_W_in = np.array(list_of_W_in_scale_factor) * np.max(state_target)
 
     return list_of_scaling_W, list_of_scaling_alpha, list_of_beta_to_test, \
            list_of_scaling_W_fb, list_of_scaling_W_in

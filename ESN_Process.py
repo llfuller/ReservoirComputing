@@ -17,7 +17,7 @@ def build_and_train_and_predict(ESN_obj, start_time,train_start_timestep,train_e
     i,j,k,l,m = param_array
     ESN_obj.W_in = ESN_obj.build_W_in(N_x, N_u, scaling_W_in)
     ESN_obj.W_fb = ESN_obj.build_W_fb(N_x, N_u, scaling_W_fb)
-    ESN_obj.alpha_matrix = scaling_alpha * np.ones(N_x)
+    ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * np.ones(N_x))
 
     # Create "echoes" and record the activations
     # Run ESN for however many timesteps necessary to get enough activation elements x of reservoir
