@@ -30,7 +30,8 @@ sparsity_tuples = np.array([[2.0/N_x,0.95],
 # second value: proportion of network with that sparsity
 sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 2000
-train_end_timestep = 5000 # Timestep at which training ends.
+train_end_timestep = 10000 # Timestep at which training ends.
+timesteps_for_teacher_forcing = 490000
 timesteps_for_prediction = 1000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
 save_or_display = '2d display' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
@@ -73,7 +74,7 @@ if system_name is "Colpitts":
     num_timesteps_data = np.shape(state_target)[1]
 
 state_target = np.divide(state_target,np.max(np.abs(state_target))) # Actual normalized input to reservoir.
-state = np.empty((N_y, train_end_timestep+timesteps_for_prediction)) # Input to reservoir. Before train_end_timestep,
+state = np.empty((N_y, train_end_timestep+timesteps_for_prediction+timesteps_for_teacher_forcing)) # Input to reservoir. Before train_end_timestep,
 # state is identical to state_target. After that index, it will differ as this is a prediction of the state by the
 # reservoir.
 # Lorenz96.plot_L96()
@@ -112,7 +113,7 @@ else:
     print("Using GPU")
 ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity_tuples,
                          x_initial, scaling_alpha * np.ones(N_x), scaling_W,
-                         scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
+                         scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction+timesteps_for_teacher_forcing)
 
 print("Done building/loading ESN at time " + str(time.time() - start_time))
 # Training and Prediction
@@ -125,7 +126,8 @@ for i, scaling_W_in in enumerate(list_of_scaling_W_in):
                                                     start_time, train_start_timestep, train_end_timestep,
                                                     mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
                                                     state_target,
-                                                    scaling_W_fb, timesteps_for_prediction, scaling_W_in,
+                                                    scaling_W_fb, timesteps_for_prediction, timesteps_for_teacher_forcing,
+                                                    scaling_W_in,
                                                     system_name, print_timings_boolean, scaling_alpha,
                                                     scaling_W, save_or_display,
                                                     state, save_name, param_array=[i,j,k,l,m])

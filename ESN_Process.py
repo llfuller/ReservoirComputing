@@ -11,8 +11,9 @@ def print_timing(print_timings_boolean, start_time, variable1_str):
 
 def build_and_train_and_predict(ESN_obj, start_time,train_start_timestep,train_end_timestep,mse_array,
                                 list_of_beta_to_test, N_u,N_y,N_x,x_initial,state_target, scaling_W_fb,
-                                timesteps_for_prediction, scaling_W_in, system_name, print_timings_boolean,
-                                scaling_alpha, scaling_W, save_or_display, state, save_name, param_array):
+                                timesteps_for_prediction, timesteps_for_teacher_forcing, scaling_W_in,
+                                system_name, print_timings_boolean, scaling_alpha, scaling_W, save_or_display,
+                                state, save_name, param_array):
     # First thing: Set parameters of ESN_obj correctly for this run:
     i,j,k,l,m = param_array
     ESN_obj.W_in = ESN_obj.build_W_in(N_x, N_u, scaling_W_in)
@@ -24,6 +25,8 @@ def build_and_train_and_predict(ESN_obj, start_time,train_start_timestep,train_e
     for n in range(0, train_end_timestep):
         # Using Teacher Forcing method:
         ESN_obj.update_reservoir(state_target[:, n], n, state_target[:,n+1])
+    print_timing(print_timings_boolean, start_time, "after_ESN_feed_time")
+
     print_timing(print_timings_boolean, start_time, "after_ESN_feed_time")
 
     for l, beta in enumerate(list_of_beta_to_test):
@@ -42,7 +45,19 @@ def build_and_train_and_predict(ESN_obj, start_time,train_start_timestep,train_e
         # Make prediction before end of training identical to target state
         state[:, 0:train_end_timestep+1] = state_target[:, 0:train_end_timestep+1]
         # Predict state at each next timestep, keeping training progress:
-        for n in range(train_end_timestep, train_end_timestep + timesteps_for_prediction-1):
+
+        # 'Training wheels' period (mixed target forcing and prediction)
+        for n in range(train_end_timestep-1, train_end_timestep + timesteps_for_teacher_forcing-1):
+            state[:, n+1] = ESN_obj.output_Y(state[:, n], n)
+            ESN_obj.update_reservoir(state[:, n], n, state_target[:, n + 1])
+
+        # Recompute W_out (readout coefficients)
+        ESN_obj.calculate_W_out(state_target, N_x, beta, train_start_timestep,
+                              train_end_timestep + timesteps_for_teacher_forcing-1)
+
+        # True training period (pure prediction)
+        for n in range(train_end_timestep + timesteps_for_teacher_forcing-1,
+                       train_end_timestep + timesteps_for_teacher_forcing-1 + timesteps_for_prediction):
             state[:, n+1] = ESN_obj.output_Y(state[:, n], n)
             ESN_obj.update_reservoir(state[:, n], n, state[:,n+1])
         print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
@@ -58,7 +73,7 @@ def build_and_train_and_predict(ESN_obj, start_time,train_start_timestep,train_e
         # Plotting.plot_activations(state_target, ESN_obj.x)
         if save_or_display is not None:
             Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name,
-                                    timesteps_for_prediction,
+                                    timesteps_for_teacher_forcing+timesteps_for_prediction,
                                     [scaling_W_in,
                                      scaling_W,
                                      scaling_alpha,
