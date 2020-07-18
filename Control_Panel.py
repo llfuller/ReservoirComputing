@@ -17,7 +17,7 @@ np.random.seed(2020)
 #=======================================================================================================================
 # Run Parameters
 #=======================================================================================================================
-system_name = "L63"
+system_name = "L96"
 run_system = False # Generate new data from chosen system
 N_x = 1000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
@@ -30,10 +30,10 @@ sparsity_tuples = np.array([[2.0/N_x,0.95],
 # second value: proportion of network with that sparsity
 sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 2000
-train_end_timestep = 5000 # Timestep at which training ends.
+train_end_timestep = 10000 # Timestep at which training ends.
 timesteps_for_prediction = 1000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
-save_or_display = '2d display' #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = "3d display"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = False
 # Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
@@ -49,28 +49,28 @@ start_time = time.time()
 if system_name is "L63":
     if run_system:
         Lorenz63.run_L63(t_final = 20000.0,
-                         dt = 0.02)
+                         dt = 0.002)
     N_u, N_y = 3, 3
-    state_target = (np.loadtxt('L63_States.txt')).transpose()
-    num_timesteps_data = np.shape(state_target)[1]
 
 if system_name is "L96":
     dims = 5 # I've only seen this work well up to 5 dimensions
     if run_system:
         Lorenz96.run_L96(dims,
                          t_final = 2000.0,
-                         dt = 0.01)
+                         dt = 0.001)
     N_u, N_y = dims, dims
-    state_target = (np.loadtxt('L96_States.txt')).transpose()
-    num_timesteps_data = np.shape(state_target)[1]
 
 if system_name is "Colpitts":
     if run_system:
         Colpitts.run_Colpitts(t_final = 10000.0,
-                              dt = 0.1)
+                              dt = 0.01)
     N_u, N_y = 3, 3
-    state_target = (np.loadtxt('Colpitts_States.txt')).transpose()
-    num_timesteps_data = np.shape(state_target)[1]
+
+
+#copy of imported file which only uses 1 out of every 10 timesteps:
+state_target = (   (np.loadtxt(system_name+'_states.txt')[::10]).transpose()   ).copy()
+print("Shape of state_target array: "+str(np.shape(state_target)))
+num_timesteps_data = np.shape(state_target)[1]
 
 state_target = np.divide(state_target,np.max(np.abs(state_target))) # Actual normalized input to reservoir.
 state = np.empty((N_y, train_end_timestep+timesteps_for_prediction)) # Input to reservoir. Before train_end_timestep,
@@ -110,9 +110,16 @@ if N_x <= 6000:
 else:
     ESN_Build_Method = ESN.ESN_GPU
     print("Using GPU")
+
 ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity_tuples,
                          x_initial, scaling_alpha * np.ones(N_x), scaling_W,
                          scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
+ESN_list = [ESN_1]
+for i in range(10):
+    ESN_list.append(ESN_Build_Method(N_x, N_u, N_y, sparsity_tuples,
+                         x_initial, float(i)/50*scaling_alpha * np.ones(N_x), scaling_W,
+                         scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction))
+Group_1 = ESN.Reservoir_Group(ESN_list)
 
 print("Done building/loading ESN at time " + str(time.time() - start_time))
 # Training and Prediction
@@ -121,7 +128,7 @@ for i, scaling_W_in in enumerate(list_of_scaling_W_in):
         for k, scaling_alpha in enumerate(list_of_scaling_alpha):
             # The beta loop is located inside ESN_Process because that is more efficient
             print("------------------\n")
-            ESN_Process.build_and_train_and_predict(ESN_1,
+            ESN_Process.build_and_train_and_predict(Group_1,
                                                     start_time, train_start_timestep, train_end_timestep,
                                                     mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
                                                     state_target,

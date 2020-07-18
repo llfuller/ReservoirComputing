@@ -20,7 +20,7 @@ def Set_Grid(state_target, perform_grid_search):
     else:
         list_of_W_in_scale_factor = [0.5]
         list_of_scaling_W = [0.175]
-        list_of_scaling_alpha = [0.5]
+        list_of_scaling_alpha = [1.0]
         list_of_beta_to_test = [0.001]
         list_of_scaling_W_fb = [1.0]
         list_of_scaling_W_in = np.array(list_of_W_in_scale_factor) * np.max(state_target)

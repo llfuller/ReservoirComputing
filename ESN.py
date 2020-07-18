@@ -101,6 +101,8 @@ class ESN_CPU: #
         W_out = sp.matmul(sp.array(Y_target[:, train_start_timestep+1:train_end_timestep+1]),
                           sp.matmul(X.transpose(),
                                     sp.linalg.inv(sp.matmul(X,X.transpose()) + beta*sp.identity(1+N_x+N_u))))
+        print("Shape of X")
+        print(sp.shape(X))
         self.W_out = W_out
 
     def output_Y(self, u, n):
@@ -109,6 +111,9 @@ class ESN_CPU: #
         concatinated_matrix = sp.hstack((sp.hstack((one_by_one,
                                                     u)),
                                          self.x[n]))
+        # print("Shapes")
+        # print(sp.shape(concatinated_matrix)) #1004
+        # print(sp.shape(self.W_out)) # (3,1004)
         return sp.matmul(self.W_out, concatinated_matrix)
 
 
@@ -220,3 +225,48 @@ class ESN_GPU: #
                                          cp.asnumpy(self.x[n])))
         output_Y_return = sp.matmul(self.W_out, concatinated_matrix)
         return output_Y_return
+
+
+
+class Reservoir_Group:
+    # W_out has shape (N_y, 1 + N_u + sum(N_x)_over_all_reservoirs_in_group )
+    W_out = sp.zeros((1,1))
+    N_x_summed = 0
+    list_of_ESN_objs = []
+    def __init__(self, list_of_ESN_objs):
+        self.list_of_ESN_objs = list_of_ESN_objs
+        self.N_x_summed = sp.sum(sp.array([sp.shape(ESN_obj.x)[1] for ESN_obj in list_of_ESN_objs]))
+        # print("N_x_summed is "+str(self.N_x_summed))
+    def update_reservoirs(self, u, n, Y):
+        # sends input to reservoirs and updates reservoir for given timesteps
+        # u is input u(n)
+        # n is timestep
+        # Y is u(n+1) for sequential data and otherwise target
+        for ESN_obj in self.list_of_ESN_objs:
+            ESN_obj.update_reservoir(u, n, Y)
+
+    def calculate_W_out(self, Y_target, beta, train_start_timestep, train_end_timestep):
+        # see Lukosevicius Practical ESN eqtn 11
+        # Using ridge regression
+        N_u = sp.shape(Y_target)[0]
+        X_summed = sp.vstack((sp.ones((1,train_end_timestep-train_start_timestep)),
+                       Y_target[:,train_start_timestep:train_end_timestep]))
+        for ESN_obj in self.list_of_ESN_objs:
+            # print("Modying X_summed by adding matrix of shape: "+str(sp.shape(ESN_obj.x[train_start_timestep:train_end_timestep].transpose())))
+            X_summed = sp.vstack( (X_summed, ESN_obj.x[train_start_timestep:train_end_timestep].transpose()) )
+        # Ridge Regression
+        # print("Size of self.N_x_summed: "+str(self.N_x_summed))
+        # print("Shape of p.matmul(X_summed,X_summed.transpose()): "+
+        #       str(sp.shape(sp.matmul(X_summed,X_summed.transpose()))))
+        W_out = sp.matmul(sp.array(Y_target[:, train_start_timestep+1:train_end_timestep+1]),
+                          sp.matmul(X_summed.transpose(),
+                                    sp.linalg.inv(sp.matmul(X_summed,X_summed.transpose()) +
+                                                  beta*sp.identity(1+self.N_x_summed+N_u))))
+        self.W_out = W_out
+    def output_Y(self, u, n):
+        one_by_one = sp.array([1])
+        # Eqtn 4
+        concatinated_matrix = sp.hstack((one_by_one, u))
+        for ESN_obj in self.list_of_ESN_objs:
+            concatinated_matrix = sp.hstack((concatinated_matrix, ESN_obj.x[n]))
+        return sp.matmul(self.W_out, concatinated_matrix)
