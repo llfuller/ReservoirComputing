@@ -32,7 +32,7 @@ preload_W = True
 # sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 0
 train_end_timestep = 50000 # Timestep at which training ends.
-timesteps_for_prediction = 10000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
+timesteps_for_prediction = 1000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
 save_or_display = "2d display"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
@@ -40,8 +40,7 @@ print_timings_boolean = True
 # Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
 save_name = "ESN_1"
 dev_length_multiplier = 2.0
-alpha_sigma = 0.2 # proportional uncertainty in the random sampling of alpha around whatever is specified in grid settings.
-
+noise_std_dev = 0.00
 
 start_time = time.time()
 
@@ -71,12 +70,13 @@ if system_name is "Colpitts":
 
 #copy of imported file which only uses 1 out of every 10 timesteps:
 state_target = (   (np.loadtxt(system_name+'_states.txt')[::10]).transpose()   ).copy()
-noise_array = np.random.normal(loc = 1.0, scale = 0.1, size = np.shape(state_target))
-state_target = np.multiply(noise_array,state_target)
 print("Shape of state_target array: "+str(np.shape(state_target)))
 num_timesteps_data = np.shape(state_target)[1]
 
 state_target = np.divide(state_target,np.max(np.abs(state_target))) # Actual normalized input to reservoir.
+noise_array = np.random.normal(loc = 1.0, scale = noise_std_dev, size = np.shape(state_target))
+state_target_noisy = np.multiply(noise_array,state_target)
+
 print("Max of target array")
 print(np.max(np.abs(state_target)))
 state = np.empty((N_y, train_end_timestep+timesteps_for_prediction)) # Input to reservoir. Before train_end_timestep,
@@ -153,7 +153,7 @@ for i, scaling_W_in in enumerate(list_of_scaling_W_in):
                 ESN_Process.build_and_train_and_predict(Group_1,
                                                         start_time, train_start_timestep, train_end_timestep,
                                                         mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
-                                                        state_target,
+                                                        state_target, state_target_noisy,
                                                         scaling_W_fb, timesteps_for_prediction, scaling_W_in,
                                                         system_name, print_timings_boolean, scaling_alpha,
                                                         scaling_W, save_or_display,
