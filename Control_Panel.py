@@ -22,8 +22,8 @@ run_system = False # Generate new data from chosen system
 N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
-perform_grid_search = True
-setup_number = 4
+perform_grid_search = False
+setup_number = 3
 sparsity_tuples = np.array([[5/N_x,1.0]
                             ])
 preload_W = True
@@ -31,15 +31,16 @@ preload_W = True
 # second value: proportion of network with that sparsity
 # sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 0
-train_end_timestep = 10000 # Timestep at which training ends.
-timesteps_for_prediction = 1000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
+train_end_timestep = 50000 # Timestep at which training ends.
+timesteps_for_prediction = 10000 # if this is too big, then MSE becomes almost meaningless. Too small and you can't tell
 # what the overall prediction behavior is.
-save_or_display = "2d save"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = "2d display"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = True
 # Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
 save_name = "ESN_1"
 dev_length_multiplier = 2.0
+alpha_sigma = 0.2 # proportional uncertainty in the random sampling of alpha around whatever is specified in grid settings.
 
 
 start_time = time.time()
@@ -70,6 +71,8 @@ if system_name is "Colpitts":
 
 #copy of imported file which only uses 1 out of every 10 timesteps:
 state_target = (   (np.loadtxt(system_name+'_states.txt')[::10]).transpose()   ).copy()
+noise_array = np.random.normal(loc = 1.0, scale = 0.1, size = np.shape(state_target))
+state_target = np.multiply(noise_array,state_target)
 print("Shape of state_target array: "+str(np.shape(state_target)))
 num_timesteps_data = np.shape(state_target)[1]
 
@@ -84,7 +87,6 @@ state = np.empty((N_y, train_end_timestep+timesteps_for_prediction)) # Input to 
 # Grid Search Info
 #=======================================================================================================================
 i,j,k,l,m = 0,0,0,0,0 # Indices to use in each grid if not grid searching
-# TODO: Revise list_of_scaling_W_in and list_of_W_in_scale_factor usage after this point (should be good though) compare
 list_of_scaling_W, list_of_scaling_alpha, list_of_beta_to_test, list_of_scaling_W_fb, \
 list_of_scaling_W_in = Grid_Search_Settings.Set_Grid(state_target, perform_grid_search, setup_number)
 # These values are used if no looping over that list:
@@ -104,6 +106,7 @@ mse_array = 100000000*np.ones((np.shape(list_of_scaling_W_in)[0],
 # Construct, Train, and Predict
 #=======================================================================================================================
 x_initial = np.zeros(N_x)
+alpha_scatter_array_before_scaling = np.random.uniform(low=1,high=1,size=N_x)#np.random.normal(loc=1.0,scale=alpha_sigma,size=N_x)
 
 # Construct ESN (parameters will be reset in the loop later on)
 print("Now building ESN at time " + str(time.time() - start_time))
@@ -116,7 +119,7 @@ print("Using CPU")
 #     print("Using GPU")
 
 ESN_1 = ESN_Build_Method(N_x, N_u, N_y, sparsity_tuples,
-                         x_initial, scaling_alpha * np.ones(N_x), scaling_W,
+                         x_initial, scaling_alpha * alpha_scatter_array_before_scaling, scaling_W,
                          scaling_W_in, scaling_W_fb, train_end_timestep, timesteps_for_prediction)
 ESN_list = [ESN_1]
 # for i in range(10):
@@ -155,6 +158,7 @@ for i, scaling_W_in in enumerate(list_of_scaling_W_in):
                                                         system_name, print_timings_boolean, scaling_alpha,
                                                         scaling_W, save_or_display,
                                                         state, save_name, sparsity_tuples, preload_W, preloaded_W,
+                                                        alpha_scatter_array_before_scaling,
                                                         param_array=[i,j,k,m])
 print("Minimum MSE of " +str(mse_array.min()))
 indices_of_min = np.unravel_index(mse_array.argmin(), mse_array.shape)

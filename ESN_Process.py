@@ -13,7 +13,7 @@ def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train
                                 list_of_beta_to_test, N_u,N_y,N_x,x_initial,state_target, scaling_W_fb,
                                 timesteps_for_prediction, scaling_W_in, system_name, print_timings_boolean,
                                 scaling_alpha, scaling_W, save_or_display, state, save_name, sparsity_tuples, preload_W,
-                                preloaded_W, param_array):
+                                preloaded_W, alpha_scatter_array_before_scaling, param_array):
     # First thing: Set parameters of ESN_obj correctly for this run:
     for ESN_obj in Group_obj.list_of_ESN_objs:
         ESN_obj.W_in = ESN_obj.build_W_in(N_x, N_u, scaling_W_in)
@@ -21,7 +21,7 @@ def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train
             ESN_obj.W = np.multiply(scaling_W, preloaded_W)
         else: # have to build or load W from scratch everytime
             ESN_obj.W = ESN_obj.build_W(N_x, sparsity_tuples, scaling_W)
-        ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * np.ones(N_x))
+        ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * alpha_scatter_array_before_scaling)
         ESN_obj.W_fb = ESN_obj.build_W_fb(N_x, N_u, scaling_W_fb)
 
     # Create "echoes" and record the activations
