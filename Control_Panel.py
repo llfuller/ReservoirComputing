@@ -18,12 +18,12 @@ np.random.seed(2020)
 # Run Parameters
 #=======================================================================================================================
 system_name = "Colpitts"
-run_system = True # Generate new data from chosen system
+run_system = False # Generate new data from chosen system
 N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
 perform_grid_search = True
-setup_number = 1
+setup_number = 4
 sparsity_tuples = np.array([[5/N_x,1.0]
                             ])
 preload_W = True
@@ -74,6 +74,8 @@ print("Shape of state_target array: "+str(np.shape(state_target)))
 num_timesteps_data = np.shape(state_target)[1]
 
 state_target = np.divide(state_target,np.max(np.abs(state_target))) # Actual normalized input to reservoir.
+print("Max of target array")
+print(np.max(np.abs(state_target)))
 state = np.empty((N_y, train_end_timestep+timesteps_for_prediction)) # Input to reservoir. Before train_end_timestep,
 # state is identical to state_target. After that index, it will differ as this is a prediction of the state by the
 # reservoir.
