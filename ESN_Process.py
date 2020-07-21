@@ -22,7 +22,7 @@ def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train
             ESN_obj.W = np.multiply(scaling_W, preloaded_W)
         else: # have to build or load W from scratch everytime
             ESN_obj.W = ESN_obj.build_W(N_x, sparsity_tuples, scaling_W)
-        ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * alpha_scatter_array_before_scaling)
+        # ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * alpha_scatter_array_before_scaling)
         ESN_obj.W_fb = ESN_obj.build_W_fb(N_x, N_u, scaling_W_fb)
 
     # Create "echoes" and record the activations

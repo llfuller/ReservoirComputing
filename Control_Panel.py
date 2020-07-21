@@ -40,7 +40,7 @@ print_timings_boolean = True
 # Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
 save_name = "ESN_1"
 dev_length_multiplier = 2.0
-noise_std_dev = 0.00
+noise_std_dev = 0.06
 
 start_time = time.time()
 
@@ -168,6 +168,11 @@ print("Min MSE at parameters: "+"("+str(list_of_scaling_W_in[indices_of_min[0]])
       str(list_of_scaling_alpha[indices_of_min[2]])+","+
       str(list_of_beta_to_test[indices_of_min[3]])+","+
       str(list_of_scaling_W_fb[indices_of_min[4]])+")")
-np.savez("mse_array_"+system_name+"_N_x_"+str(N_x)+"_setup"+str(setup_number)+"_Train"+str(train_end_timestep)+"_Predict_"+str(timesteps_for_prediction)+".npz",mse_array=mse_array)
+# Saving MSE matrix for later retrieval
+if perform_grid_search:
+    np.savez("mse_array_"+system_name+"_N_x_"+str(N_x)+"_setup"+str(setup_number)+"_Train"+str(train_end_timestep)+"_Predict_"+str(timesteps_for_prediction)+".npz",mse_array=mse_array)
+else:
+    np.savez("mse_array_"+system_name+"_N_x_"+str(N_x)+"_setupCustom"+"_Train"+str(train_end_timestep)+"_Predict_"+str(timesteps_for_prediction)+".npz",mse_array=mse_array)
+
 print("Done at time: "+str(time.time()-start_time))
 print(Group_1.W_out)
