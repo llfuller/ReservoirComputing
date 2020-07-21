@@ -12,13 +12,18 @@ def print_timing(print_timings_boolean, start_time, variable1_str):
 def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train_end_timestep,mse_array,
                                 list_of_beta_to_test, N_u,N_y,N_x,x_initial,state_target, scaling_W_fb,
                                 timesteps_for_prediction, scaling_W_in, system_name, print_timings_boolean,
-                                scaling_alpha, scaling_W, save_or_display, state, save_name, param_array):
+                                scaling_alpha, scaling_W, save_or_display, state, save_name, sparsity_tuples, preload_W,
+                                preloaded_W, param_array):
     # First thing: Set parameters of ESN_obj correctly for this run:
-    i,j,k,l,m = param_array
-    # for ESN_obj in Group_obj.list_of_ESN_objs:
-    #     ESN_obj.W_in = ESN_obj.build_W_in(N_x, N_u, scaling_W_in)
-    #     ESN_obj.W_fb = ESN_obj.build_W_fb(N_x, N_u, scaling_W_fb)
-    #     ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * np.ones(N_x))
+    for ESN_obj in Group_obj.list_of_ESN_objs:
+        ESN_obj.W_in = ESN_obj.build_W_in(N_x, N_u, scaling_W_in)
+        if preload_W: # just multiply preloaded W by scaling factor
+            ESN_obj.W = np.multiply(scaling_W, preloaded_W)
+        else: # have to build or load W from scratch everytime
+            ESN_obj.W = ESN_obj.build_W(N_x, sparsity_tuples, scaling_W)
+        ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * np.ones(N_x))
+        ESN_obj.W_fb = ESN_obj.build_W_fb(N_x, N_u, scaling_W_fb)
+
     # Create "echoes" and record the activations
     # Run ESN for however many timesteps necessary to get enough activation elements x of reservoir
     for n in range(0, train_end_timestep):
@@ -26,12 +31,13 @@ def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train
         #ESN_obj.update_reservoir(state_target[:, n], n, state_target[:,n+1])
         Group_obj.update_reservoirs(state_target[:, n], n, state_target[:,n+1])
 
-
+    # time.sleep(1) # necessary to prevent CPU method from messing up calculation (allows last x update to complete?)
     print_timing(print_timings_boolean, start_time, "after_ESN_feed_time")
 
     for l, beta in enumerate(list_of_beta_to_test):
-        # print("Testing for " + str((scaling_W_in, scaling_W, scaling_alpha, beta, scaling_W_fb)))
-        # print("Has Indices: " + str((i, j, k, l, 0)))
+        i, j, k, m = param_array
+        print("Testing for " + str((scaling_W_in, scaling_W, scaling_alpha, beta, scaling_W_fb)))
+        print("Has Indices: " + str((i, j, k, l, m)))
 
         # Compute W_out (readout coefficients)
         Group_obj.calculate_W_out(state_target, beta, train_start_timestep, train_end_timestep)
@@ -47,9 +53,9 @@ def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train
         # Predict state at each next timestep, keeping training progress:
         for n in range(train_end_timestep, train_end_timestep + timesteps_for_prediction-1):
             state[:, n+1] = Group_obj.output_Y(state[:, n], n)
-            Group_obj.update_reservoirs(state[:, n], n, state[:,n+1])
+            Group_obj.update_reservoirs(state[:, n], n, state[:,n+1]) # generates x_(n+1)
         print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
-        np.savez(save_name+'.npz', ESN_obj=ESN_obj)
+        # np.savez(save_name+'.npz', ESN_obj=ESN_obj)
         print("mean_squared_error is: " + str(mean_squared_error(
             state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],
             state[:, train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())))

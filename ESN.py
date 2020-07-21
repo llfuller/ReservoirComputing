@@ -42,7 +42,6 @@ class ESN_CPU: #
         # scaling_W >= 1
         sparsity_tuples_list = tuple([(a_row[0],a_row[1]) for a_row in sparsity_tuples])
         if os.path.isfile('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt'):
-            print("Loading W")
             # If file already exists
             W = sp.loadtxt('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt')
         else:
@@ -64,9 +63,10 @@ class ESN_CPU: #
             # to control decrease of spectral radius.
             spectral_radius = sp.amax(abs(sp.linalg.eigvals(W_unnormalized)))
             print("SPECTRAL RADIUS IS IS "+str(spectral_radius))
-            W = sp.multiply( scaling_W, sp.divide(W_unnormalized,spectral_radius) )
-            sp.savetxt('W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt',W, fmt='%.4f')
-        return W
+            W = sp.divide(W_unnormalized,spectral_radius)
+            # saves without the extra scaling_W factor
+            sp.savetxt('W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt',W)
+        return sp.multiply( scaling_W, W)
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
         W_in = (1.0/scaling_W_in)*sp.random.random((N_x, 1+N_u))
@@ -106,7 +106,7 @@ class ESN_CPU: #
         self.W_out = W_out
 
     def output_Y(self, u, n):
-        one_by_one = sp.array([1])
+        one_by_one = sp.identity(1)
         # Eqtn 4
         concatinated_matrix = sp.hstack((sp.hstack((one_by_one,
                                                     u)),
@@ -114,7 +114,8 @@ class ESN_CPU: #
         # print("Shapes")
         # print(sp.shape(concatinated_matrix)) #1004
         # print(sp.shape(self.W_out)) # (3,1004)
-        return sp.matmul(self.W_out, concatinated_matrix)
+        output_Y_return = sp.matmul(self.W_out, concatinated_matrix)
+        return output_Y_return
 
 
 class ESN_GPU: #
@@ -179,10 +180,10 @@ class ESN_GPU: #
             # to control decrease of spectral radius.
             spectral_radius = sp.amax(sp.array(abs(sp.linalg.eigvals(cp.asnumpy(W_unnormalized)))))
             print("SPECTRAL RADIUS IS IS " + str(spectral_radius))
-            W = cp.multiply(scaling_W, cp.divide(W_unnormalized, spectral_radius))
+            W = cp.divide(W_unnormalized, spectral_radius)
             sp.savetxt('W_(adjacency)/W_' + str(N_x) + '_' + str(N_x) + '_' + str(sparsity_tuples_list) + '.txt',
                        cp.asnumpy(W), fmt='%.4f')
-        return W
+        return cp.multiply( scaling_W, W)
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
         W_in = (1.0/scaling_W_in)*sp.random.random((N_x, 1+N_u))
