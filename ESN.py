@@ -44,6 +44,7 @@ class ESN_CPU: #
         if os.path.isfile('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt'):
             # If file already exists
             W = sp.loadtxt('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt')
+            print("Loaded W with Spectral Radius = " + str(sp.amax(abs(sp.linalg.eigvals(W)))))
         else:
             # If file doesn't yet exist
             # No notion of locality here
@@ -62,11 +63,13 @@ class ESN_CPU: #
             # Normalize by largest eigenvalue and additional scaling factor
             # to control decrease of spectral radius.
             spectral_radius = sp.amax(abs(sp.linalg.eigvals(W_unnormalized)))
-            print("SPECTRAL RADIUS IS IS "+str(spectral_radius))
+            print("SPECTRAL RADIUS (before normalization) IS "+str(spectral_radius))
             W = sp.divide(W_unnormalized,spectral_radius)
             # saves without the extra scaling_W factor
             sp.savetxt('W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt',W)
-        return sp.multiply( scaling_W, W)
+            print("Saving W with Spectral Radius = "+str(sp.amax(abs(sp.linalg.eigvals(W)))))
+
+        return sp.multiply(scaling_W, W)
 
     def build_W_in(self, N_x, N_u, scaling_W_in):
         W_in = (1.0/scaling_W_in)*sp.random.random((N_x, 1+N_u))

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_name,timesteps_for_prediction,
-                   params,save_or_display="save"):
+                   setup_number, params,save_or_display="save"):
     # Plot Y and Y_target for comparison:
     fig = plt.figure()
     if '3d' in save_or_display.lower():
@@ -19,6 +19,7 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         if "save" in save_or_display.lower():
             plt.savefig("3D_Orbit_Plots/"+
                         system_name + "/" +
+                        "grid_setup_"+ str(setup_number) + "/" +
                         system_name+
                         "_orbit_params_("+
                         str(round(params[0],4))+ ","+
@@ -42,6 +43,7 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         if "save" in save_or_display.lower():
             plt.savefig("2D_x_Plots/" +
                         system_name + "/" +
+                        "grid_setup_"+ str(setup_number) + "/" +
                         system_name +
                         "_orbit_params_(" +
                         str(round(params[0], 4)) + "," +
