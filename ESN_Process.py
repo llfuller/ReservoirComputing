@@ -9,9 +9,9 @@ def print_timing(print_timings_boolean, start_time, variable1_str):
         print(variable1_str+str(time.time()-start_time)+"\n-----------------------")
 
 
-def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train_end_timestep,mse_array,
+def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train_start_timestep,train_end_timestep,mse_array,
                                 list_of_beta_to_test, N_u,N_y,N_x,x_initial,state_target, state_target_noisy,
-                                scaling_W_fb, timesteps_for_prediction, scaling_W_in, system_name,
+                                scaling_W_fb, timesteps_for_prediction, scaling_W_in, system_name, dims, dimension_directory,
                                 print_timings_boolean, scaling_alpha, scaling_W, save_or_display, state, save_name,
                                 sparsity_tuples, preload_W, preloaded_W, alpha_scatter_array_before_scaling,
                                 setup_number, param_array):
@@ -74,11 +74,11 @@ def build_and_train_and_predict(Group_obj, start_time,train_start_timestep,train
                   beta,
                   scaling_W_fb]
         if save_or_display is not None:
-            Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name,
-                                    timesteps_for_prediction, setup_number,
-                                    params, save_or_display)
+            Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name, dims,
+                                 dimension_directory, timesteps_for_prediction, setup_number, perform_grid_search,
+                                 params, save_or_display)
         np.savetxt("states/" + system_name + "/" +
-                   "prediction/"+
+                   "prediction/"+dimension_directory+
                    "_orbit_params_(" +
                    str(round(params[0], 4)) + "," +
                    str(round(params[1], 4)) + "," +

@@ -1,9 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
-def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_name,timesteps_for_prediction,
-                   setup_number, params,save_or_display="save"):
+def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_name, dims, dimension_directory,
+                timesteps_for_prediction, setup_number, perform_grid_search, params,save_or_display="save"):
     # Plot Y and Y_target for comparison:
+    grid_setup_directory = "" # set like this so it's blank if not a grid search
+    if perform_grid_search:
+        grid_setup_directory = "grid_setup_" + str(setup_number) +"/"
+
     fig = plt.figure()
+
     if '3d' in save_or_display.lower():
         ax = fig.gca(projection='3d')
         ax.plot(Y_target[0, :train_end_timestep].transpose(), Y_target[1, :train_end_timestep].transpose(), Y_target[2, :train_end_timestep].transpose(),
@@ -19,7 +24,8 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         if "save" in save_or_display.lower():
             plt.savefig("3D_Orbit_Plots/"+
                         system_name + "/" +
-                        "grid_setup_"+ str(setup_number) + "/" +
+                        grid_setup_directory +
+                        dimension_directory +
                         system_name+
                         "_orbit_params_("+
                         str(round(params[0],4))+ ","+
@@ -35,6 +41,7 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         ax.plot(Y[0, train_end_timestep:].transpose(), color = 'orange', label = 'Prediction')
         plt.ylabel("x coord")
         plt.xlabel("time index after training")
+        plt.xlim(0, timesteps_for_prediction)
         plt.title(
             system_name + " after training timesteps: " + str(train_start_timestep) + " - " + str(train_end_timestep))
         print("Saving for beta = "+str(params[3]))
@@ -43,7 +50,8 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         if "save" in save_or_display.lower():
             plt.savefig("2D_x_Plots/" +
                         system_name + "/" +
-                        "grid_setup_"+ str(setup_number) + "/" +
+                        grid_setup_directory +
+                        dimension_directory +
                         system_name +
                         "_orbit_params_(" +
                         str(round(params[0], 4)) + "," +
