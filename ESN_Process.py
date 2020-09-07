@@ -21,6 +21,7 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
         if preload_W: # just multiply preloaded W by scaling factor
             ESN_obj.W = np.multiply(scaling_W, preloaded_W)
         else: # have to build or load W from scratch everytime
+            print("Building W matrix")
             ESN_obj.W = ESN_obj.build_W(N_x, sparsity_tuples, scaling_W)
         ESN_obj.alpha_matrix = ESN_obj.build_alpha_matrix(scaling_alpha * alpha_scatter_array_before_scaling)
         ESN_obj.W_fb = ESN_obj.build_W_fb(N_x, N_u, scaling_W_fb)
@@ -77,7 +78,8 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
             Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name, dims,
                                  dimension_directory, timesteps_for_prediction, setup_number, perform_grid_search,
                                  params, save_or_display)
-        np.savetxt("states/" + system_name + "/" +
+        if "save" in save_or_display.lower():
+            np.savetxt("states/" + system_name + "/" +
                    "prediction/"+dimension_directory+
                    "_orbit_params_(" +
                    str(round(params[0], 4)) + "," +

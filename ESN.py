@@ -46,6 +46,7 @@ class ESN_CPU: #
             W = sp.loadtxt('./W_(adjacency)/W_'+str(N_x)+'_'+str(N_x)+'_'+str(sparsity_tuples_list)+'.txt')
             print("Loaded W with Spectral Radius = " + str(sp.amax(abs(sp.linalg.eigvals(W)))))
         else:
+            print("Beginning build_W function.")
             # If file doesn't yet exist
             # No notion of locality here
             # Designate connection or no connection at each element of the (N_x) by (N_x) matrix:
@@ -86,10 +87,10 @@ class ESN_CPU: #
         # u is input at specific time
         #   u has shape (N_u (3 for L63))
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
-        x_n_tilde = sp.tanh(sp.matmul(self.W,self.x[n])
-                            + sp.matmul(self.W_in, sp.hstack((sp.array([1]),u)))
-                            + sp.matmul(self.W_fb, Y)
-                            ) # TODO: Add derivative term?
+        tanh_arg = sp.matmul(self.W,self.x[n])\
+                   + sp.matmul(self.W_in, sp.hstack((sp.array([1]),u)))\
+                   + 0*sp.matmul(self.W_fb, Y)
+        x_n_tilde = sp.tanh(tanh_arg)#(sp.tanh(0.4*tanh_arg) + sp.tanh(1.3*tanh_arg) + sp.tanh(10*tanh_arg))/3
         self.x[n+1] = sp.multiply((1-self.alpha_matrix), self.x[n]) \
               + sp.multiply(self.alpha_matrix, x_n_tilde)
 
