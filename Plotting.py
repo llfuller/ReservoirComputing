@@ -84,3 +84,14 @@ def plot_activations(Y, x):
     plt.figure()
     plt.plot(Y.transpose())
     plt.show()
+
+def plot_sr_pnz_gen_synch_heatmap(mse_array, pnz_array, sr_array):
+    plt.imshow(mse_array, cmap='hot', interpolation='nearest')
+    plt.xlabel('pnz')
+    plt.ylabel('Spectral Radius')
+    plt.show()
+
+def plot_1D_quick(some_data):
+    plt.figure()
+    plt.plot(some_data)
+    plt.show()

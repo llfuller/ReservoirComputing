@@ -89,7 +89,7 @@ class ESN_CPU: #
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
         tanh_arg = sp.matmul(self.W,self.x[n])\
                    + sp.matmul(self.W_in, sp.hstack((sp.array([1]),u)))\
-                   + 0*sp.matmul(self.W_fb, Y)
+                   #+ 0*sp.matmul(self.W_fb, Y)
         x_n_tilde = sp.tanh(tanh_arg)#(sp.tanh(0.4*tanh_arg) + sp.tanh(1.3*tanh_arg) + sp.tanh(10*tanh_arg))/3
         self.x[n+1] = sp.multiply((1-self.alpha_matrix), self.x[n]) \
               + sp.multiply(self.alpha_matrix, x_n_tilde)
