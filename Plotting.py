@@ -95,3 +95,45 @@ def plot_1D_quick(some_data):
     plt.figure()
     plt.plot(some_data)
     plt.show()
+
+def plot_contour(xlist, ylist, z_array, x_label, y_label, title):
+    # Assuming inputs are 1D arrays and that a loop over combinations of xlist and ylist elements correspond to zlist
+    # elements.
+    length_of_x = np.shape(xlist)[0]
+    length_of_y = np.shape(ylist)[0]
+    print("Length of x in plot_contour:"+str(length_of_x))
+    print("Length of y in plot_contour:"+str(length_of_y))
+    print("Shape of z_array in plot_contour: "+str(np.shape(z_array)))
+
+    if np.shape(z_array)[0] == length_of_x*length_of_y:
+        z_grid = np.array((length_of_x,length_of_y))
+        for i, x in enumerate(xlist):
+            for j, y in enumerate(ylist):
+                z_grid[i,j] = z_array[j+length_of_y*i]
+    # if np.shape(z_array) == (length_of_x, length_of_y):
+    else:
+        z_grid = z_array
+    X, Y = np.meshgrid(np.array(xlist), np.array(ylist))
+    plt.figure()
+    plt.contourf(X, Y, z_grid, cmap="seismic")
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.colorbar()
+    plt.plot()
+    plt.show()
+    # plt.savefig("Gen_Sync_Plots/"+title)
+
+def plot_scatter(array_1, array_2, title, directory, x_label, y_label):
+    plt.figure()
+    colors_array = []
+    # for i in range(100):
+    #     colors_array.append('r')
+    # for i in range(4000000-100):
+    #     colors_array.append('b')
+    plt.scatter(array_1, array_2, s=0.5)
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    # plt.show()
+    # plt.savefig(directory+title+".png")

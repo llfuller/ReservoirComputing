@@ -8,6 +8,7 @@ import numpy as np
 import time
 import os.path
 from sklearn.metrics import mean_squared_error
+from scipy import stats
 import Plotting
 import prediction_time
 
@@ -16,7 +17,7 @@ This script is the only script to run. It uses the other scripts in the director
 Parameters are specified at the top.
 This is used to create graphs of outputs for single ESNs and grid search.
 """
-system_name_list = ["L96"]
+system_name_list = ["L63"]
 for system_name in system_name_list:
     # system_name = "Colpitts"
     setup_number = 2
@@ -29,7 +30,7 @@ for system_name in system_name_list:
     #=======================================================================================================================
     # Run Parameters
     #=======================================================================================================================
-    run_system = True # Generate new data from chosen system. If L96, should run this system if changing dimensions.
+    run_system = False # Generate new data from chosen system. If L96, should run this system if changing dimensions.
     N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
     # the reservoir has to remember from the input to solve its task"
     # -Lukosevicius in PracticalESN
@@ -37,6 +38,7 @@ for system_name in system_name_list:
     # setup_number = -1
     sparsity_tuples = np.array([[0.2*N_x/N_x,1.0]
                                 ])
+    produce_data = False
     preload_W = False
     # First value: sparsity (numerator is average number of connections FROM one node TO other nodes),
     # second value: proportion of network with that sparsity
@@ -172,12 +174,13 @@ for system_name in system_name_list:
      # scaling_W_fb],
 
     # Beginning of edits for testing generalized synchronization #
-    pnz_array = np.linspace(0.002,0.15,20)
-    sr_array = np.linspace(0.002,1.5,20)
+    pnz_array = np.linspace(0.002,0.15,5)
+    sr_array = np.linspace(0.002,10,20)
     random_initial_condition_1 = np.random.random((N_x))
     random_initial_condition_2 = np.random.random((N_x))
     random_initial_condition_list = [random_initial_condition_1, random_initial_condition_2]
     mse_array = 1000*np.ones((np.shape(pnz_array)[0], np.shape(sr_array)[0]))
+    gen_sync_result_array = 1000*np.ones((np.shape(pnz_array)[0], np.shape(sr_array)[0]))
     print(np.shape(mse_array))
     for p, pnz in enumerate(pnz_array):
         sparsity_tuples = np.array([[pnz, 1.0]
@@ -191,44 +194,96 @@ for system_name in system_name_list:
                         # The beta loop is located inside ESN_Process because that is more efficient
                         print("------------------\n")
                         res_states_list = [-1,-1]
-                        ESN_Process.build_and_train_and_predict(Group_1, perform_grid_search,
-                                                                start_time, train_start_timestep, train_end_timestep,
-                                                                mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
-                                                                state_target, state_target_noisy,
-                                                                scaling_W_fb, timesteps_for_prediction, scaling_W_in,
-                                                                system_name, dims, dimension_directory,
-                                                                print_timings_boolean, scaling_alpha,
-                                                                scaling_W, save_or_display,
-                                                                state, save_name, sparsity_tuples, preload_W, preloaded_W,
-                                                                alpha_scatter_array_before_scaling, setup_number,
-                                                                random_initial_condition_list, pnz, res_states_list,
-                                                                param_array=[i,j,k,m])
                         params = [scaling_W_in,
                                   scaling_W,
                                   scaling_alpha,
                                   list_of_beta_to_test[0],
                                   scaling_W_fb]
-                        states_1 = res_states_list[0]
-                        states_2 = res_states_list[1]
-                        # states_1 = np.loadtxt("states/" + system_name + "/" +
-                        #        "prediction_gen_synch/index_1/"+dimension_directory+
-                        #        "_orbit_params_(" +
-                        #        str(round(params[0], 4)) + "," +
-                        #        str(round(params[1], 4)) + "," +
-                        #        str(round(params[2], 4)) + "," +
-                        #        "{:.2e}".format(params[3])+ ","+
-                        #        str(round(params[4], 4)) + ")_pnz="+str(pnz)+".txt")
-                        # states_2 = np.loadtxt("states/" + system_name + "/" +
-                        #        "prediction_gen_synch/index_2/"+dimension_directory+
-                        #        "_orbit_params_(" +
-                        #        str(round(params[0], 4)) + "," +
-                        #        str(round(params[1], 4)) + "," +
-                        #        str(round(params[2], 4)) + "," +
-                        #        "{:.2e}".format(params[3])+ ","+
-                        #        str(round(params[4], 4)) + ")_pnz="+str(pnz)+".txt")
+                        if produce_data:
+                            ESN_Process.build_and_train_and_predict(Group_1, perform_grid_search,
+                                                                    start_time, train_start_timestep, train_end_timestep,
+                                                                    mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
+                                                                    state_target, state_target_noisy,
+                                                                    scaling_W_fb, timesteps_for_prediction, scaling_W_in,
+                                                                    system_name, dims, dimension_directory,
+                                                                    print_timings_boolean, scaling_alpha,
+                                                                    scaling_W, save_or_display,
+                                                                    state, save_name, sparsity_tuples, preload_W, preloaded_W,
+                                                                    alpha_scatter_array_before_scaling, setup_number,
+                                                                    random_initial_condition_list, pnz, res_states_list,
+                                                                    param_array=[i,j,k,m])
+                            states_1 = res_states_list[0]
+                            states_2 = res_states_list[1]
+                        else: # load data instead
+                            states_1 = np.loadtxt("states/" + system_name + "/" +
+                                   "prediction_gen_synch/index_1/"+dimension_directory+
+                                   "_orbit_params_(" +
+                                   str(round(params[0], 4)) + "," +
+                                   str(round(params[1], 4)) + "," +
+                                   str(round(params[2], 4)) + "," +
+                                   "{:.2e}".format(params[3])+ ","+
+                                   str(round(params[4], 4)) + ")_pnz="+str(pnz)+".txt")
+                            states_2 = np.loadtxt("states/" + system_name + "/" +
+                                   "prediction_gen_synch/index_2/"+dimension_directory+
+                                   "_orbit_params_(" +
+                                   str(round(params[0], 4)) + "," +
+                                   str(round(params[1], 4)) + "," +
+                                   str(round(params[2], 4)) + "," +
+                                   "{:.2e}".format(params[3])+ ","+
+                                   str(round(params[4], 4)) + ")_pnz="+str(pnz)+".txt")
+                            print(pnz)
+                            print(str(round(params[1], 4)))
+                            print("States values")
+                            print(states_1[0,0])
+                            print(states_2[0,0])
+
+                            pass
                         mse_array[p, j] = mean_squared_error(states_1, states_2)
-    np.savetxt('mse_array_gen_sync_'+str(system_name), mse_array)
-    Plotting.plot_sr_pnz_gen_synch_heatmap(mse_array, pnz_array, sr_array)
+                        slope, intercept, r_value, p_value, std_error = stats.linregress(states_1.flatten(),
+                                                                                         states_2.flatten())  # put all times into one row before performing linear regression
+                        print("Slope, which should = 1: " + str(slope))
+                        print("Standard error, which is hopefully small:" + str(std_error))
+                        gen_sync_result_array[p, j] = (std_error < 0.0001)
+
+                        # mse_array = np.loadtxt('mse_array_gen_sync_'+system_name)
+                        # mse_array[0,0]=-5
+                        # mse_array[-1,-1]=5
+                        # mse_array[0,-1] = 10
+                        # gen_sync_result_array[0,0]=-5
+                        # gen_sync_result_array[-1,-1]=100
+                        # gen_sync_result_array[0,-1] = 200
+
+                        # Plotting.plot_scatter(states_1[100:], states_2[100:],
+                        #            system_name+"_orbit_params_(" +
+                        #            str(round(params[0], 4)) + "," +
+                        #            str(round(params[1], 4)) + "," +
+                        #            str(round(params[2], 4)) + "," +
+                        #            "{:.2e}".format(params[3])+ ","+
+                        #            str(round(params[4], 4)) + ")_pnz="+str(pnz),
+                        #                       "Gen_Sync_Plots/Relationship_Charts/"+system_name+"/"+dimension_directory,
+                        #                       x_label="Initial Condition 1", y_label="Initial Condition 2",)
+    Plotting.plot_contour(pnz_array, sr_array, gen_sync_result_array.transpose(), x_label='pnz',
+                          y_label='SR',
+                          title='Gen Sync for ' + str(
+                              system_name) + " Driving of Tanh Neurons for 2 Different ICs")
+
+    # np.savetxt('mse_array_gen_sync_'+str(system_name), mse_array)
+    # Plotting.plot_sr_pnz_gen_synch_heatmap(mse_array, pnz_array, sr_array)
+    print("MSE for Lowest pnz and lowest SR:")
+    print(mse_array[0,0])
+    print("MSE for Largest pnz and largest SR:")
+    print(mse_array[-1,-1])
+    print("MSE for Lowest pnz and largest SR:")
+    print(mse_array[0,-1])
+    Plotting.plot_contour(pnz_array, sr_array, mse_array.transpose(), x_label='pnz', y_label='SR',
+                          title='More SR MSE for '+str(system_name)+" Driving of Tanh Neurons for 2 Different Initial Conditions")
+
+    # Plotting.plot_1D_quick(states_1[:500,:4])
+    # Plotting.plot_1D_quick(states_2[:500,:4])
+    print("States values")
+    print(states_1[0, 0])
+    print(states_2[0, 0])
+
     # print("Minimum MSE of " +str(mse_array.min()))
     # indices_of_min = np.unravel_index(mse_array.argmin(), mse_array.shape)
     # print("Min MSE at parameter indices: "+str(indices_of_min))
@@ -244,5 +299,5 @@ for system_name in system_name_list:
     #     np.savez("mse_array_"+system_name+"_N_x_"+str(N_x)+"_setupCustom"+"_Train"+str(train_end_timestep)+"_Predict_"+str(timesteps_for_prediction)+".npz",mse_array=mse_array)
 
     print("Done at time: "+str(time.time()-start_time))
-
+    print("Plotting Lorenz Map for "+str(system_name))
     # prediction_time.run_This_Method()
