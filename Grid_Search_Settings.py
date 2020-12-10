@@ -68,6 +68,54 @@ def Set_Grid(state_target, perform_grid_search, setup_number):
     #     beta_grid = np.array([1.0])
     #     extra_W_fb_scale_factor_grid = np.array([1.0]) # input scalings grid
 
+
+    if setup_number == 6:
+        # "Broad Grid Search for NaKL"
+        extra_W_in_scale_factor_grid = np.linspace(0.25, 1.0, 5) # input scalings grid, makes no difference for L96?
+        scaling_W_grid = np.linspace(0.3, 1.3, 10) # direct multiplier for spectral radius grid after normalization occurs
+        alpha_grid = np.linspace(0.1, 1.0, 9) # uniform leaking rate grid
+        # Secondary parameters to grid search
+        beta_grid = np.logspace(-4, 3, 7)
+        extra_W_fb_scale_factor_grid = np.array(range(1,2))/1.0 # input scalings grid
+
+    if setup_number == 7:
+        # "Narrower Search for NaKL"
+        extra_W_in_scale_factor_grid = np.array([0.25]) # input scalings grid, makes no difference for L96?
+        scaling_W_grid = np.linspace(0.7, 1.3, 5) # direct multiplier for spectral radius grid after normalization occurs
+        alpha_grid = np.linspace(0.1, 1.0, 5) # uniform leaking rate grid
+        # Secondary parameters to grid search
+        beta_grid = np.logspace(-3, 2, 8)
+        extra_W_fb_scale_factor_grid = np.array([1.0]) # input scalings grid
+
+    if setup_number == 8:
+        # "Same as grid search 7 but relabeled as 8 for specific use as L63 signal driving V in NaKL trained RC"
+        extra_W_in_scale_factor_grid = np.array([0.25]) # input scalings grid, makes no difference for L96?
+        scaling_W_grid = np.linspace(0.7, 1.3, 5) # direct multiplier for spectral radius grid after normalization occurs
+        alpha_grid = np.linspace(0.1, 1.0, 5) # uniform leaking rate grid
+        # Secondary parameters to grid search
+        beta_grid = np.logspace(-3, 2, 8)
+        extra_W_fb_scale_factor_grid = np.array([1.0]) # input scalings grid
+
+    if setup_number == 9:
+        # "Same as grid search 7 but relabeled as 9 for specific use as L63 signal driving V in NaKL trained RC"
+        extra_W_in_scale_factor_grid = np.array([0.25])  # input scalings grid, makes no difference for L96?
+        scaling_W_grid = np.linspace(0.7, 1.3,
+                                     5)  # direct multiplier for spectral radius grid after normalization occurs
+        alpha_grid = np.linspace(0.1, 1.0, 5)  # uniform leaking rate grid
+        # Secondary parameters to grid search
+        beta_grid = np.logspace(-3, 2, 8)
+        extra_W_fb_scale_factor_grid = np.array([1.0])  # input scalings grid
+
+    if setup_number == 10:
+        # "Same as grid search 7 but relabeled as 9 for specific use as L63 signal driving V in NaKL trained RC"
+        extra_W_in_scale_factor_grid = np.array([0.25])  # input scalings grid, makes no difference for L96?
+        scaling_W_grid = np.linspace(0.7, 1.3,
+                                     5)  # direct multiplier for spectral radius grid after normalization occurs
+        alpha_grid = np.linspace(0.1, 1.0, 5)  # uniform leaking rate grid
+        # Secondary parameters to grid search
+        beta_grid = np.logspace(-3, 2, 8)
+        extra_W_fb_scale_factor_grid = np.array([1.0])  # input scalings grid
+
     if perform_grid_search:
         list_of_W_in_scale_factor = extra_W_in_scale_factor_grid
         list_of_scaling_W = scaling_W_grid
@@ -76,11 +124,11 @@ def Set_Grid(state_target, perform_grid_search, setup_number):
         list_of_scaling_W_fb = extra_W_fb_scale_factor_grid
         list_of_scaling_W_in = list_of_W_in_scale_factor * np.max(np.abs(state_target))
     else:
-        # L96 9D and 10D
+        # Something else
         list_of_W_in_scale_factor = [1.0]
-        list_of_scaling_W = [0.8556]
+        list_of_scaling_W = [0.95]
         list_of_scaling_alpha = [0.55]
-        list_of_beta_to_test = [0.316]
+        list_of_beta_to_test = [100]
         list_of_scaling_W_fb = [1.0]
         list_of_scaling_W_in = np.array(list_of_W_in_scale_factor) * np.max(np.abs(state_target))
         # # L96 9D and 10D

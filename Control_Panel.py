@@ -1,12 +1,14 @@
 import Lorenz63
 import Lorenz96
 import Colpitts
+import NaKL
 import Grid_Search_Settings
 import ESN_Process
 import ESN
 import numpy as np
 import time
 import os.path
+import matplotlib.pyplot as plt
 import prediction_time
 
 """
@@ -14,8 +16,8 @@ This script is the only script to run. It uses the other scripts in the director
 Parameters are specified at the top.
 This is used to create graphs of outputs for single ESNs and grid search.
 """
-system_name = "L63"
-setup_number = 2
+system_name = "NaKL"
+setup_number = 7
 
 # for system_name in ["L96"]:
 #     for setup_number in [1]:
@@ -29,19 +31,19 @@ run_system = False # Generate new data from chosen system. If L96, should run th
 N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
-perform_grid_search = False
+perform_grid_search = True
 # setup_number = -1
-sparsity_tuples = np.array([[0.2*N_x/N_x,1.0]
+sparsity_tuples = np.array([[0.1,1.0]
                             ])
-preload_W = False
+preload_W = True
 # First value: sparsity (numerator is average number of connections FROM one node TO other nodes),
 # second value: proportion of network with that sparsity
 # sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 0
-train_end_timestep = 10000 # Timestep at which training ends.
-timesteps_for_prediction = 1000 # if this is too big, then calculations take too long. Medium range: MSE is meaningless. Short range: good measure
+train_end_timestep = 20000 # Timestep at which training ends.
+timesteps_for_prediction = 10000 # if this is too big, then calculations take too long. Medium range: MSE is meaningless. Short range: good measure
 # what the overall prediction behavior is.
-save_or_display = "2d display"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = "2d save"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = True
 # Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
@@ -54,6 +56,7 @@ start_time = time.time()
 #=======================================================================================================================
 # Data Input
 #=======================================================================================================================
+extra_stuff_list = []
 if system_name is "L63":
     dims = 3
     if run_system:
@@ -76,6 +79,23 @@ if system_name is "Colpitts":
                               dt = 0.01)
     N_u, N_y = 3, 3
 
+if system_name is "NaKL":
+    dims = 5
+    t_final = 10000.0
+    dt = 0.01
+    num_timesteps_sim = int(round(float(t_final/dt)))
+    time_sequence = np.arange(0.0, t_final, dt)
+    I_L63 = np.loadtxt("L63_States_slowX10.txt")[:num_timesteps_sim,0]#[10+100*0.25*np.sin(0.01*t) for t in time_sequence] #
+    print("Shape of L63 States imported: "+str(np.shape(I_L63)))
+    if run_system:
+        NaKL.run_NaKL(t_final = t_final,
+                      dt = dt,
+                      time_sequence = time_sequence,
+                      I_ext = I_L63
+                      )
+    N_u, N_y = 5, 5
+    extra_stuff_list.append(I_L63)
+
 #=======================================================================================================================
 # Directory and Saving Info
 #=======================================================================================================================
@@ -86,6 +106,7 @@ if system_name.upper() == "L96":
 
 #copy of imported file which only uses 1 out of every 10 timesteps:
 state_target = (   (np.loadtxt(system_name+'_states.txt')[::10]).transpose()   ).copy()
+# plt.plot(state_target[4])
 print("Shape of state_target array: "+str(np.shape(state_target)))
 num_timesteps_data = np.shape(state_target)[1]
 
@@ -167,31 +188,25 @@ print("Done building/loading ESN at time " + str(time.time() - start_time))
  # beta,
  # scaling_W_fb],
 
-# Beginning of edits for testing generalized synchronization #
-pnz_array = np.linspace(0,0.15,75)
-sr_array = np.linspace(0,1.5,75)
-for pnz in pnz_array:
-    sparsity_tuples = np.array([[pnz, 1.0]
-                                ])
-    list_of_scaling_W = sr_array
+
 # End of edits for testing generalized synchronization #
-    for i, scaling_W_in in enumerate(list_of_scaling_W_in):
-        for j, scaling_W in enumerate(list_of_scaling_W):
-            for k, scaling_alpha in enumerate(list_of_scaling_alpha):
-                for m, scaling_W_fb in enumerate(list_of_scaling_W_fb):
-                    # The beta loop is located inside ESN_Process because that is more efficient
-                    print("------------------\n")
-                    ESN_Process.build_and_train_and_predict(Group_1, perform_grid_search,
-                                                            start_time, train_start_timestep, train_end_timestep,
-                                                            mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
-                                                            state_target, state_target_noisy,
-                                                            scaling_W_fb, timesteps_for_prediction, scaling_W_in,
-                                                            system_name, dims, dimension_directory,
-                                                            print_timings_boolean, scaling_alpha,
-                                                            scaling_W, save_or_display,
-                                                            state, save_name, sparsity_tuples, preload_W, preloaded_W,
-                                                            alpha_scatter_array_before_scaling, setup_number,
-                                                            param_array=[i,j,k,m])
+for i, scaling_W_in in enumerate(list_of_scaling_W_in):
+    for j, scaling_W in enumerate(list_of_scaling_W):
+        for k, scaling_alpha in enumerate(list_of_scaling_alpha):
+            for m, scaling_W_fb in enumerate(list_of_scaling_W_fb):
+                # The beta loop is located inside ESN_Process because that is more efficient
+                print("------------------\n")
+                ESN_Process.build_and_train_and_predict(Group_1, perform_grid_search,
+                                                        start_time, train_start_timestep, train_end_timestep,
+                                                        mse_array, list_of_beta_to_test, N_u, N_y, N_x, x_initial,
+                                                        state_target, state_target_noisy,
+                                                        scaling_W_fb, timesteps_for_prediction, scaling_W_in,
+                                                        system_name, dims, dimension_directory,
+                                                        print_timings_boolean, scaling_alpha,
+                                                        scaling_W, save_or_display,
+                                                        state, save_name, sparsity_tuples, preload_W, preloaded_W,
+                                                        alpha_scatter_array_before_scaling, setup_number, extra_stuff_list,
+                                                        param_array=[i,j,k,m])
 # print("Minimum MSE of " +str(mse_array.min()))
 # indices_of_min = np.unravel_index(mse_array.argmin(), mse_array.shape)
 # print("Min MSE at parameter indices: "+str(indices_of_min))

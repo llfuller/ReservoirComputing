@@ -14,7 +14,9 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
                                 scaling_W_fb, timesteps_for_prediction, scaling_W_in, system_name, dims, dimension_directory,
                                 print_timings_boolean, scaling_alpha, scaling_W, save_or_display, state, save_name,
                                 sparsity_tuples, preload_W, preloaded_W, alpha_scatter_array_before_scaling,
-                                setup_number, param_array):
+                                setup_number, extra_stuff_list, param_array):
+    if system_name == "NaKL":
+        I_L63 = extra_stuff_list[0]
     # First thing: Set parameters of ESN_obj correctly for this run:
     for ESN_obj in Group_obj.list_of_ESN_objs:
         ESN_obj.W_in = ESN_obj.build_W_in(N_x, N_u, scaling_W_in)
@@ -54,9 +56,19 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
         state[:,train_end_timestep+1:] = 0
         # Make prediction before end of training identical to target state
         state[:, 0:train_end_timestep+1] = state_target_noisy[:, 0:train_end_timestep+1]
+        #If NaKL Model, make sure current (5th component of state) is clamped to true current at each timestep
+        if system_name == "NaKL":
+            state[4, :] = state_target[4, :np.shape(state)[1]]
+            print(state[4])
+            print(I_L63)
         # Predict state at each next timestep, keeping training progress:
         for n in range(train_end_timestep, train_end_timestep + timesteps_for_prediction-1):
             state[:, n+1] = Group_obj.output_Y(state[:, n], n)
+            if system_name == "NaKL":
+                state[4, n+1] = state_target[4, n+1] # this clamps current to correct value during prediction
+                if np.abs(np.max(state[:, n + 1])) > 100:
+                    print("This prediction must be ended (numbers getting too large)")
+                    break
             Group_obj.update_reservoirs(state[:, n], n, state[:,n+1]) # generates x_(n+1)
         print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
         # np.savez(save_name+'.npz', ESN_obj=ESN_obj)
@@ -75,9 +87,14 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
                   beta,
                   scaling_W_fb]
         if save_or_display is not None:
-            Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name, dims,
-                                 dimension_directory, timesteps_for_prediction, setup_number, perform_grid_search,
-                                 params, save_or_display)
+            if system_name == "NaKL":
+                Plotting.plot_NaKL(state, state_target, train_start_timestep, train_end_timestep, system_name, dims,
+                                     dimension_directory, timesteps_for_prediction, setup_number, perform_grid_search,
+                                     params, save_or_display)
+            else:
+                Plotting.plot_orbits(state, state_target, train_start_timestep, train_end_timestep, system_name, dims,
+                                     dimension_directory, timesteps_for_prediction, setup_number, perform_grid_search,
+                                     params, save_or_display)
         if "save" in save_or_display.lower():
             np.savetxt("states/" + system_name + "/" +
                    "prediction/"+dimension_directory+

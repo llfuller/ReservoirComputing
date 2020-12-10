@@ -9,10 +9,10 @@ def run_L63(t_final, dt):
     rho = 28.0
     sigma = 10.0
     beta = 8.0 / 3.0
-
+    tau = 0.1 # scaling factor
     def f(state, t):
         x, y, z = state  # Unpack the state vector
-        return sigma * (y - x), x * (rho - z) - y, x * y - beta * z  # Derivatives
+        return tau*(sigma * (y - x)), tau*(x * (rho - z) - y), tau*(x * y - beta * z)  # Derivatives
 
     state0 = [1.0, 1.0, 1.0]
     t = np.arange(0.0, t_final, dt)
