@@ -121,8 +121,8 @@ def plot_contour(xlist, ylist, z_array, x_label, y_label, title):
     plt.title(title)
     plt.colorbar()
     plt.plot()
-    plt.show()
-    # plt.savefig("Gen_Sync_Plots/"+title)
+    # plt.show()
+    plt.savefig("Gen_Sync_Plots/"+title)
 
 def plot_scatter(array_1, array_2, title, directory, x_label, y_label):
     plt.figure()

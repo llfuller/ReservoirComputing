@@ -87,6 +87,11 @@ class ESN_CPU: #
         # u is input at specific time
         #   u has shape (N_u (3 for L63))
         # See page 16 eqtn 18 of Lukosevicius PracticalESN for feedback info.
+        # print("SHAPES")
+        # print(sp.shape(self.W))
+        # print(sp.shape(self.x[n]))
+        # print(sp.shape(self.W_in))
+        # print(sp.shape(sp.hstack((sp.array([1]),u))))
         tanh_arg = sp.matmul(self.W,self.x[n])\
                    + sp.matmul(self.W_in, sp.hstack((sp.array([1]),u)))\
                    #+ 0*sp.matmul(self.W_fb, Y)
