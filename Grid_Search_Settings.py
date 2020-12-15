@@ -76,13 +76,20 @@ def Set_Grid(state_target, perform_grid_search, setup_number):
         list_of_scaling_W_fb = extra_W_fb_scale_factor_grid
         list_of_scaling_W_in = list_of_W_in_scale_factor * np.max(np.abs(state_target))
     else:
-        # L63
+        # L96 Gen Synch
         list_of_W_in_scale_factor = [0.25]
         list_of_scaling_W = [0.8]
-        list_of_scaling_alpha = [0.9062]
+        list_of_scaling_alpha = np.linspace(0.1, 1.0, 10)
         list_of_beta_to_test = [0.0001]
         list_of_scaling_W_fb = [1.0]
         list_of_scaling_W_in = np.array(list_of_W_in_scale_factor) * np.max(np.abs(state_target))
+        # L63
+        # list_of_W_in_scale_factor = [0.25]
+        # list_of_scaling_W = [0.8]
+        # list_of_scaling_alpha = [0.9062]
+        # list_of_beta_to_test = [0.0001]
+        # list_of_scaling_W_fb = [1.0]
+        # list_of_scaling_W_in = np.array(list_of_W_in_scale_factor) * np.max(np.abs(state_target))
         # L63
         # list_of_W_in_scale_factor = [0.25]
         # list_of_scaling_W = [0.8]

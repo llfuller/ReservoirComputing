@@ -178,13 +178,15 @@ for system_name in system_name_list:
          # scaling_W_fb],
 
         # Beginning of edits for testing generalized synchronization #
-        pnz_array = np.linspace(0.002,0.15,5)
+        # pnz_array = np.linspace(0.002,0.15,5)
+        pnz_array = np.array([0.04])
+
         sr_array = np.linspace(0.002,10,20)
         random_initial_condition_1 = np.random.random((N_x))
         random_initial_condition_2 = np.random.random((N_x))
         random_initial_condition_list = [random_initial_condition_1, random_initial_condition_2]
-        mse_array = 1000*np.ones((np.shape(pnz_array)[0], np.shape(sr_array)[0]))
-        gen_sync_result_array = 1000*np.ones((np.shape(pnz_array)[0], np.shape(sr_array)[0]))
+        mse_array = 1000*np.ones((np.shape(list_of_scaling_alpha)[0], np.shape(sr_array)[0]))
+        gen_sync_result_array = 1000*np.ones((np.shape(list_of_scaling_alpha)[0], np.shape(sr_array)[0]))
         print(np.shape(mse_array))
         for p, pnz in enumerate(pnz_array):
             sparsity_tuples = np.array([[pnz, 1.0]
@@ -242,12 +244,12 @@ for system_name in system_name_list:
                                 print(states_2[0,0])
 
                                 pass
-                            mse_array[p, j] = mean_squared_error(states_1, states_2)
+                            mse_array[k, j] = mean_squared_error(states_1, states_2)
                             slope, intercept, r_value, p_value, std_error = stats.linregress(states_1.flatten(),
                                                                                              states_2.flatten())  # put all times into one row before performing linear regression
                             print("Slope, which should = 1: " + str(slope))
                             print("Standard error, which is hopefully small:" + str(std_error))
-                            gen_sync_result_array[p, j] = (std_error < 0.0001)
+                            gen_sync_result_array[k, j] = (std_error < 0.0001)
 
                             # mse_array = np.loadtxt('mse_array_gen_sync_'+system_name)
                             # mse_array[0,0]=-5
@@ -256,17 +258,18 @@ for system_name in system_name_list:
                             # gen_sync_result_array[0,0]=-5
                             # gen_sync_result_array[-1,-1]=100
                             # gen_sync_result_array[0,-1] = 200
-
+                            relationship_chart_title = system_name+ "_orbit_params_(" + \
+                                                       str(round(params[0], 4)) + "," + \
+                                                       str(round(params[1], 4)) + "," + \
+                                                       str(round(params[2], 4)) + "," + \
+                                                       "{:.2e}".format(params[3])+ ","+ \
+                                                       str(round(params[4], 4)) + ")_pnz="+str(pnz)
                             Plotting.plot_scatter(states_1[100:], states_2[100:],
-                                       system_name+"_orbit_params_(" +
-                                       str(round(params[0], 4)) + "," +
-                                       str(round(params[1], 4)) + "," +
-                                       str(round(params[2], 4)) + "," +
-                                       "{:.2e}".format(params[3])+ ","+
-                                       str(round(params[4], 4)) + ")_pnz="+str(pnz),
+                                                  relationship_chart_title,
                                                   "Gen_Sync_Plots/Relationship_Charts/"+system_name+"/"+dimension_directory,
                                                   x_label="Initial Condition 1", y_label="Initial Condition 2",)
-        Plotting.plot_contour(pnz_array, sr_array, gen_sync_result_array.transpose(), x_label='pnz',
+                            # Plotting.plt.savefig(relationship_chart_title)
+        Plotting.plot_contour(list_of_scaling_alpha, sr_array, gen_sync_result_array.transpose(), x_label='Alpha',
                               y_label='SR',
                               title='Gen Sync for ' + str(
                                   system_name)+ " " + str(dims) + "-D" + " Driving of Tanh Neurons for 2 Different ICs")
@@ -281,7 +284,7 @@ for system_name in system_name_list:
         print(mse_array[-1,-1])
         print("MSE for Lowest pnz and largest SR:")
         print(mse_array[0,-1])
-        Plotting.plot_contour(pnz_array, sr_array, mse_array.transpose(), x_label='pnz', y_label='SR',
+        Plotting.plot_contour(list_of_scaling_alpha , sr_array, mse_array.transpose(), x_label='Alpha', y_label='SR',
                               title='More SR MSE for '+str(system_name)+ " " + str(dims) + "-D" + " Driving of Tanh Neurons for 2 Different Initial Conditions")
 
         # Plotting.plot_1D_quick(states_1[:500,:4])
