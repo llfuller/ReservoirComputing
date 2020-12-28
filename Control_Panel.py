@@ -17,7 +17,7 @@ Parameters are specified at the top.
 This is used to create graphs of outputs for single ESNs and grid search.
 """
 system_name = "NaKL"
-setup_number = 7
+setup_number = 11
 
 # for system_name in ["L96"]:
 #     for setup_number in [1]:
