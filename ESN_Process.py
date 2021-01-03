@@ -3,6 +3,7 @@ import numpy as np
 import Plotting
 from sklearn.metrics import mean_squared_error
 import scipy as sp
+import matplotlib.pyplot as plt
 
 def print_timing(print_timings_boolean, start_time, variable1_str):
     if print_timings_boolean==True:
@@ -13,7 +14,7 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
                                 list_of_beta_to_test, N_u,N_y,N_x,x_initial,state_target, state_target_noisy,
                                 scaling_W_fb, timesteps_for_prediction, scaling_W_in, system_name, dims, dimension_directory,
                                 print_timings_boolean, scaling_alpha, scaling_W, save_or_display, state, save_name,
-                                sparsity_tuples, preload_W, preloaded_W, alpha_scatter_array_before_scaling,
+                                sparsity_tuples, preload_W, preloaded_W, alpha_scatter_array_before_scaling, time_sequence,
                                 setup_number, extra_stuff_list, param_array):
     if system_name == "NaKL":
         I_L63 = extra_stuff_list[0]
@@ -55,7 +56,7 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
             ESN_obj.x[train_end_timestep+1:] = 0
         state[:,train_end_timestep+1:] = 0
         # Make prediction before end of training identical to target state
-        state[:, 0:train_end_timestep+1] = state_target_noisy[:, 0:train_end_timestep+1]
+        state[:, 2:train_end_timestep+1] = state_target_noisy[:, 2:train_end_timestep+1]
         #If NaKL Model, make sure current (5th component of state) is clamped to true current at each timestep
         if system_name == "NaKL":
             state[4, :] = state_target[4, :np.shape(state)[1]]
@@ -71,6 +72,31 @@ def build_and_train_and_predict(Group_obj, perform_grid_search, start_time,train
                     break
             Group_obj.update_reservoirs(state[:, n], n, state[:,n+1]) # generates x_(n+1)
         print_timing(print_timings_boolean, start_time, "after_Y_predict_train_time")
+
+        # Determine output of reservoir using reservoir activity before training and W_out from training
+        state_pre_training = np.empty((5, train_end_timestep))
+        state_pre_training[:,0] = np.zeros(np.shape(state[:,0])) #set initial condition
+        for n in range(0, train_end_timestep-1):
+            state_pre_training[:, n+1] = Group_obj.output_Y(state[:, n], n)
+
+        np.savetxt("NaKL+L63x_Prediction_20000_to_30000.txt", state[:,train_end_timestep:train_end_timestep+timesteps_for_prediction])
+        np.savetxt("NaKL+L63x_Training_0_to_20000.txt", np.hstack((state_pre_training[:,0:train_end_timestep].transpose(),
+                                                                           np.array([(time_sequence)[0:train_end_timestep]  ]).transpose(),
+                                                                           state_target[:,0:train_end_timestep].transpose()) ).round(decimals=8), fmt='%.7f')
+        np.savetxt("NaKL+L63x_Prediction_20000_to_30000_2.txt", np.hstack((state[:,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose(),
+                                                                           np.array([(time_sequence)[train_end_timestep:train_end_timestep+timesteps_for_prediction]  ]).transpose(),
+                                                                           state_target[:,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose()) ).round(decimals=8), fmt='%.7f')
+        np.savetxt("NaKL+L63x_Prediction_20000_to_30000_dt_0.01_mhn_only.txt", np.hstack((state[1:4,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose(),
+                                                                           np.array([(time_sequence)[train_end_timestep:train_end_timestep+timesteps_for_prediction]  ]).transpose(),
+                                                                           state_target[1:4,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose()) ).round(decimals=8), fmt='%.7f')
+        plt.figure()
+        plt.plot(state_target[:,0:train_end_timestep].transpose())
+        plt.plot(state_pre_training[:,0:train_end_timestep].transpose(), linestyle = ":")
+        plt.show()
+        plt.figure()
+        plt.plot(state_target[:,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose())
+        plt.plot(state[:,train_end_timestep:train_end_timestep+timesteps_for_prediction].transpose(), linestyle = ":")
+        plt.show()
         # np.savez(save_name+'.npz', ESN_obj=ESN_obj)
         # print("mean_squared_error is: " + str(mean_squared_error(
         #     state_target.transpose()[train_end_timestep:train_end_timestep+timesteps_for_prediction],

@@ -37,7 +37,8 @@ def run_NaKL(t_final, dt, time_sequence, I_ext):
     state0 = [-50, 0.4, 0.4, 0.4, 0]
     t = np.arange(0.0, t_final, dt)
     states = odeint(f, state0, t) #shape is (time points=400,000, spatial dims = 3)
-
+    print("State shape:"+str(np.shape(states)))
+    print("times: "+str(t))
     states[:,4] = I_ext[:np.shape(states)[0]]
     np.savetxt('NaKL_States.txt',states, fmt = '%.4f')
 

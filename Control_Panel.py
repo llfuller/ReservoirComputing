@@ -17,7 +17,7 @@ Parameters are specified at the top.
 This is used to create graphs of outputs for single ESNs and grid search.
 """
 system_name = "NaKL"
-setup_number = 11
+setup_number = 7
 
 # for system_name in ["L96"]:
 #     for setup_number in [1]:
@@ -31,7 +31,7 @@ run_system = False # Generate new data from chosen system. If L96, should run th
 N_x = 2000 # Number of nodes in reservoir."should be at least equal to the estimate of independent real values
 # the reservoir has to remember from the input to solve its task"
 # -Lukosevicius in PracticalESN
-perform_grid_search = True
+perform_grid_search = False
 # setup_number = -1
 sparsity_tuples = np.array([[0.1,1.0]
                             ])
@@ -40,10 +40,10 @@ preload_W = True
 # second value: proportion of network with that sparsity
 # sparsity = 15.0 / N_x # Only applies to GPU so far TODO: What if symmetric?
 train_start_timestep = 0
-train_end_timestep = 20000 # Timestep at which training ends.
-timesteps_for_prediction = 10000 # if this is too big, then calculations take too long. Medium range: MSE is meaningless. Short range: good measure
+train_end_timestep = 200000 # Timestep at which training ends.
+timesteps_for_prediction = 300000 # if this is too big, then calculations take too long. Medium range: MSE is meaningless. Short range: good measure
 # what the overall prediction behavior is.
-save_or_display = "2d save"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
+save_or_display = "2d display"  #save 3d or 3d plots of orbits after prediction or display them. Set to None for neither.
 # use 3d or 2d prefix for either type of graph.
 print_timings_boolean = True
 # Since all data is normalized, the characteristic length is 1. I'll set the allowed deviation length to 0.05 of this.
@@ -105,7 +105,9 @@ if system_name.upper() == "L96":
     dimension_directory = str(dims) + "D/"
 
 #copy of imported file which only uses 1 out of every 10 timesteps:
-state_target = (   (np.loadtxt(system_name+'_states.txt')[::10]).transpose()   ).copy()
+state_target = (   (np.loadtxt(system_name+'_states.txt')).transpose()   ).copy()#[::10]).transpose()   ).copy()
+print("Shape of loaded state array:" +str(np.shape(np.loadtxt(system_name+'_states.txt'))))
+print("Shape of time_sequence array:" +str(np.shape(time_sequence)))
 # plt.plot(state_target[4])
 print("Shape of state_target array: "+str(np.shape(state_target)))
 num_timesteps_data = np.shape(state_target)[1]
@@ -205,7 +207,8 @@ for i, scaling_W_in in enumerate(list_of_scaling_W_in):
                                                         print_timings_boolean, scaling_alpha,
                                                         scaling_W, save_or_display,
                                                         state, save_name, sparsity_tuples, preload_W, preloaded_W,
-                                                        alpha_scatter_array_before_scaling, setup_number, extra_stuff_list,
+                                                        alpha_scatter_array_before_scaling, time_sequence,
+                                                        setup_number, extra_stuff_list,
                                                         param_array=[i,j,k,m])
 # print("Minimum MSE of " +str(mse_array.min()))
 # indices_of_min = np.unravel_index(mse_array.argmin(), mse_array.shape)
