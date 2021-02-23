@@ -138,7 +138,7 @@ def Set_Grid(state_target, perform_grid_search, setup_number):
         # Something else
         list_of_W_in_scale_factor = [0.25]
         list_of_scaling_W = [1.15]
-        list_of_scaling_alpha = [0.2]
+        list_of_scaling_alpha = [0.1]
         list_of_beta_to_test = [5.18*0.001]
         list_of_scaling_W_fb = [1.0]
         list_of_scaling_W_in = np.array(list_of_W_in_scale_factor) * np.max(np.abs(state_target))

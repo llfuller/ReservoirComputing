@@ -63,7 +63,8 @@ def plot_orbits(Y, Y_target, train_start_timestep, train_end_timestep,system_nam
         plt.show()
 
 def plot_NaKL(Y, Y_target, train_start_timestep, train_end_timestep,system_name, dims, dimension_directory,
-                timesteps_for_prediction, setup_number, perform_grid_search, params,save_or_display="save"):
+                timesteps_for_prediction, setup_number, perform_grid_search, params,save_or_display="save",
+                data_storage_number= None):
 
     grid_setup_directory = "" # set like this so it's blank if not a grid search
     if perform_grid_search:
@@ -110,7 +111,10 @@ def plot_NaKL(Y, Y_target, train_start_timestep, train_end_timestep,system_name,
                         str(round(params[1], 4)) + "," +
                         str(round(params[2], 4)) + "," +
                         "{:.2e}".format(params[3])+ ","+
-                        str(round(params[4], 4)) + ").png")
+                        str(round(params[4], 4)) + ")_"+
+                        "storage_"+str(data_storage_number) +
+                        ".png")
+
     if "display" in save_or_display:
         plt.show()
 
